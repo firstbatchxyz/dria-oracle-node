@@ -1,7 +1,7 @@
 use alloy::primitives::{address, Address};
 use alloy_chains::{
     Chain,
-    NamedChain::{AnvilHardhat, BaseSepolia},
+    NamedChain::{AnvilHardhat, Base, BaseSepolia},
 };
 use lazy_static::lazy_static;
 use std::collections::HashMap;
@@ -53,7 +53,14 @@ lazy_static! {
         );
 
         // base mainnet
-        // TODO: !!!
+        contracts.insert(
+          Base.into(),
+          ContractAddresses {
+              token: address!("4200000000000000000000000000000000000006"),
+              registry: address!("7645eef691ad9dc0f29b6abfc73cca4c8be44051"),
+              coordinator: address!("17b6d1eddcd5f9ca19bb2ffed2f3deb6bd74bd20"),
+          },
+        );
 
         contracts
     };

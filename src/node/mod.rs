@@ -60,6 +60,7 @@ impl DriaOracle {
             .await
             .wrap_err("could not get chain id")?;
         let chain = Chain::from_id(chain_id_u64);
+        log::info!("Connected to chain: {}", chain);
 
         let node = Self {
             config,
