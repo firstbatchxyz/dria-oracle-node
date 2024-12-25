@@ -26,7 +26,7 @@ impl SwanPurchasePostProcessor {
 }
 
 impl PostProcess for SwanPurchasePostProcessor {
-    const PROTOCOL: &'static str = "swan-buyer-purchase";
+    const PROTOCOL: &'static str = "swan-agent-purchase";
 
     fn post_process(&self, input: String) -> Result<(Bytes, Bytes, bool)> {
         // we will cast strings to Address here
