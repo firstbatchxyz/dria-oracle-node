@@ -16,7 +16,7 @@ async fn test_weth_transfer() -> Result<()> {
     let amount = parse_ether("100")?;
 
     let config = DriaOracleConfig::new_from_env()?;
-    let (node, _anvil) = DriaOracle::anvil_new(config).await?;
+    let node = DriaOracle::new(config).await?;
 
     // setup alice
     let alice = node.connect(node.anvil_funded_wallet(None).await?);

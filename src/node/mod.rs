@@ -10,19 +10,24 @@ use crate::contracts::*;
 use alloy::providers::fillers::{
     BlobGasFiller, ChainIdFiller, FillProvider, GasFiller, JoinFill, NonceFiller, WalletFiller,
 };
+use alloy::providers::layers::AnvilProvider;
 use alloy::providers::WalletProvider;
+use alloy::transports::http::Http;
+use alloy::transports::BoxTransport;
 use alloy::{
     network::{Ethereum, EthereumWallet},
     primitives::Address,
     providers::{Identity, Provider, ProviderBuilder, RootProvider},
-    transports::http::{Client, Http},
 };
 use alloy_chains::Chain;
 use eyre::{eyre, Context, Result};
+use reqwest::Client;
 use std::env;
 
 // TODO: use a better type for these
+#[cfg(not(feature = "anvil"))]
 type DriaOracleProviderTransport = Http<Client>;
+#[cfg(not(feature = "anvil"))]
 type DriaOracleProvider = FillProvider<
     JoinFill<
         JoinFill<
@@ -33,6 +38,25 @@ type DriaOracleProvider = FillProvider<
     >,
     RootProvider<DriaOracleProviderTransport>,
     DriaOracleProviderTransport,
+    Ethereum,
+>;
+
+#[cfg(feature = "anvil")]
+type DriaOracleProviderTransport = BoxTransport;
+#[cfg(feature = "anvil")]
+type DriaOracleProvider = FillProvider<
+    JoinFill<
+        JoinFill<
+            JoinFill<
+                Identity,
+                JoinFill<GasFiller, JoinFill<BlobGasFiller, JoinFill<NonceFiller, ChainIdFiller>>>,
+            >,
+            WalletFiller<EthereumWallet>,
+        >,
+        WalletFiller<EthereumWallet>,
+    >,
+    AnvilProvider<RootProvider<BoxTransport>, BoxTransport>,
+    BoxTransport,
     Ethereum,
 >;
 
@@ -49,10 +73,19 @@ impl DriaOracle {
     ///
     /// The contract addresses are chosen based on the chain id returned from the provider.
     pub async fn new(config: DriaOracleConfig) -> Result<Self> {
+        #[cfg(not(feature = "anvil"))]
         let provider = ProviderBuilder::new()
             .with_recommended_fillers()
             .wallet(config.wallet.clone())
             .on_http(config.rpc_url.clone());
+
+        #[cfg(feature = "anvil")]
+        let provider = ProviderBuilder::new()
+            .with_recommended_fillers()
+            .wallet(config.wallet.clone())
+            .on_anvil_with_wallet_and_config(|anvil| {
+                anvil.fork(config.rpc_url.clone()).block_time(1)
+            });
 
         // fetch the chain id so that we can use the correct addresses
         let chain_id_u64 = provider
