@@ -43,7 +43,7 @@ async fn test_swan() -> Result<()> {
     // node setup
     let workflows = DriaWorkflowsConfig::new(vec![Model::GPT4Turbo]);
     let config = DriaOracleConfig::new_from_env()?;
-    let (node, _anvil) = DriaOracle::anvil_new(config).await?;
+    let node = DriaOracle::new(config).await?;
 
     // setup accounts
     let requester = node.connect(node.anvil_funded_wallet(None).await?);

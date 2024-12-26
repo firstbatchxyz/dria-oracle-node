@@ -28,7 +28,7 @@ async fn test_request() -> Result<()> {
 
     // node setup
     let config = DriaOracleConfig::new_from_env()?;
-    let (node, _anvil) = DriaOracle::anvil_new(config).await?;
+    let node = DriaOracle::new(config).await?;
 
     // setup account & buy some WETH
     let requester = node.connect(node.anvil_funded_wallet(None).await?);

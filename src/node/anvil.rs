@@ -5,9 +5,8 @@
 use crate::node::contract_error_report;
 use crate::OracleRegistry;
 
-use super::{DriaOracle, DriaOracleConfig};
+use super::DriaOracle;
 use alloy::network::EthereumWallet;
-use alloy::node_bindings::{Anvil, AnvilInstance};
 use alloy::primitives::Address;
 use alloy::primitives::{utils::parse_ether, U256};
 use alloy::providers::ext::AnvilApi;
@@ -18,17 +17,6 @@ use eyre::{Context, Result};
 impl DriaOracle {
     /// Default ETH funding amount for generated wallets.
     const ANVIL_FUND_ETHER: &'static str = "10000";
-
-    /// Creates a new Anvil instance that forks the chain at the configured RPC URL.
-    ///
-    /// Return the node instance and the Anvil instance.
-    /// Note that when Anvil instance is dropped, you will lose the forked chain.
-    pub async fn anvil_new(config: DriaOracleConfig) -> Result<(Self, AnvilInstance)> {
-        let anvil = Anvil::new().fork(config.rpc_url.to_string()).try_spawn()?;
-        let node = Self::new(config.with_rpc_url(anvil.endpoint_url())).await?;
-
-        Ok((node, anvil))
-    }
 
     /// Generates a random wallet, funded with the given `fund` amount.
     ///
@@ -48,7 +36,7 @@ impl DriaOracle {
         let registry = OracleRegistry::new(self.addresses.registry, &self.provider);
 
         let owner = registry.owner().call().await?._0;
-        registry.provider().anvil_impersonate_account(owner).await?;
+        // registry.provider().anvil_impersonate_account(owner).await?;
 
         let req = registry.addToWhitelist(vec![address]).from(owner);
         let tx = req
@@ -63,10 +51,10 @@ impl DriaOracle {
             .get_receipt()
             .await?;
 
-        registry
-            .provider()
-            .anvil_stop_impersonating_account(owner)
-            .await?;
+        // registry
+        //     .provider()
+        //     .anvil_stop_impersonating_account(owner)
+        //     .await?;
 
         Ok(receipt)
     }

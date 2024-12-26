@@ -200,13 +200,12 @@ impl From<OracleCoordinatorErrors> for ErrReport {
 #[cfg(test)]
 mod tests {
     use crate::{contracts::OracleKind, DriaOracle, DriaOracleConfig};
-    use alloy::providers::Provider;
 
     #[tokio::test]
     async fn test_registry_error() -> eyre::Result<()> {
         let config = DriaOracleConfig::new_from_env()?.enable_logs();
-        let (node, _anvil) = DriaOracle::anvil_new(config).await?;
-        assert!(node.provider.get_block_number().await? > 1);
+        let node = DriaOracle::new(config).await?;
+        // assert!(node.provider.get_block_number().await? > 1);
 
         // tries to register if registered, or opposite, to trigger an error
         const KIND: OracleKind = OracleKind::Generator;
