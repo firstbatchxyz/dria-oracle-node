@@ -21,13 +21,12 @@ if (!input) {
 if (input.startsWith("0x")) {
   input = input.slice(2);
 }
-
-// decode to arweave url
 const inputDecoded = Buffer.from(input, "hex").toString();
-const arweaveTxid = Buffer.from(inputDecoded, "hex").toString("base64url");
+const obj = JSON.parse(inputDecoded);
 
 // download the actual response from Arweave
-const url = `https://arweave.net/${arweaveTxid}`;
+const url = `https://arweave.net/${obj.arweave}`;
 console.log(url);
 const res = await fetch(url);
+
 console.log(await res.text());
