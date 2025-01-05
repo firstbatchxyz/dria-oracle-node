@@ -156,7 +156,7 @@ mod tests {
         // cargo test --package dria-oracle --lib --all-features -- compute::generation::execute::tests::test_raw_workflow --exact --show-output --ignored
         dotenvy::dotenv().unwrap();
 
-        let contract_result = hex_literal::hex!("7b2261727765617665223a2239397a4252676c4c663443696b35676c57444f667542463736456e417a4a6344303431545a614c6d6f6934227d");
+        let contract_result = hex_literal::hex!("7b2261727765617665223a224d49555775656361634b417a62755442335a6a57613463784e6461774d71435a704550694f71675a625a63227d");
         let request = GenerationRequest::try_parse_bytes(&contract_result.into())
             .await
             .unwrap();

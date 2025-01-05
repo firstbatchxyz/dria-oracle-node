@@ -1,4 +1,6 @@
 mod commands;
+use std::time::Duration;
+
 use commands::Commands;
 
 mod parsers;
@@ -39,7 +41,8 @@ pub async fn cli() -> Result<()> {
 
     // create node
     let config = DriaOracleConfig::new(&secret_key, rpc_url)
-        .wrap_err("could not create oracle configuration")?;
+        .wrap_err("could not create oracle configuration")?
+        .with_tx_timeout(Duration::from_secs(30)); // timeout is 30secs by default
     let node = DriaOracle::new(config)
         .await
         .wrap_err("could not create oracle node")?;

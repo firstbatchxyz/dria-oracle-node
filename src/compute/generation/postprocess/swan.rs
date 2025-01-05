@@ -49,10 +49,15 @@ impl PostProcess for SwanPurchasePostProcessor {
         }
 
         // then, do post processing on them to cast them to `Address`
-        // TODO: handle error
         let addresses = shopping_list_lines
             .into_iter()
-            .map(|line| Address::from_str(line).unwrap())
+            .filter_map(|line| match Address::from_str(line) {
+                Ok(address) => Some(address),
+                Err(e) => {
+                    log::warn!("Could not parse address from {}: {}", line, e);
+                    None
+                }
+            })
             .collect::<Vec<Address>>();
 
         // `abi.encode` the list of addresses to be decodable by contract
@@ -74,7 +79,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_swan_purchase_post_processor() {
+    fn test_swan_post_processor_encoding() {
         const INPUT: &str = r#"
 some blabla here and there
 
@@ -113,7 +118,7 @@ some more blabla here
     }
 
     #[test]
-    fn test_swan_post_processor_2() {
+    fn test_swan_post_processor_encoding_2() {
         const INPUT: &str = r#"
 <shop_list>
 0x36f55f830D6E628a78Fcb70F73f9D005BaF88eE3
@@ -135,6 +140,26 @@ some more blabla here
             address!("671527de058BaD60C6151cA29d501C87439bCF62"),
             address!("66FC9dC1De3db773891753CD257359A26e876305"),
         ];
+        assert_eq!(addresses, expected_addresses, "must have listed addresses");
+    }
+
+    #[test]
+    fn test_swan_post_processor_with_fails() {
+        // only the 3rd one shall pass here
+        const INPUT: &str = r#"
+<shop_list>
+0x36f55f830D6E628a78Fcb70F73f9D005BaF
+im not even an address lol
+0x26F5B12b67D5F006826824A73F58b88D6bdAA74B
+00 0 00  0 0 0 0 00 0\t\t\t\t
+</shop_list>
+"#;
+
+        let post_processor = SwanPurchasePostProcessor::new("<shop_list>", "</shop_list>");
+
+        let (output, _, _) = post_processor.post_process(INPUT.to_string()).unwrap();
+        let addresses = <Vec<Address>>::abi_decode(&output, true).unwrap();
+        let expected_addresses = vec![address!("26F5B12b67D5F006826824A73F58b88D6bdAA74B")];
         assert_eq!(addresses, expected_addresses, "must have listed addresses");
     }
 

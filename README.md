@@ -52,6 +52,11 @@ The CLI provides several methods to interact with the oracle contracts.
 - [Viewing Tasks](#viewing-tasks)
 - [Balance & Rewards](#balance--rewards)
 
+> [!TIP]
+>
+> By default logs will be `info` level, but you can add a `DEBUG=1` env variable and it will use `debug` level instead.
+> You can set `RUST_LOG` variable yourself as well.
+
 ### Registration
 
 To serve oracle requests, you **MUST** first register as your desired oracle type, i.e. `generator` or `validator`. These are handled by the registration commands `register` and `unregister` which accepts multiple arguments to register at once. You can then see your registrations with `registrations` command.
