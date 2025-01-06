@@ -9,7 +9,6 @@ use reqwest::{Client, Url};
 use std::{env, path::PathBuf};
 
 const DEFAULT_BASE_URL: &str = "https://node1.bundlr.network"; // "https://gateway.irys.xyz";
-const DEFAULT_WALLET_PATH: &str = "./secrets/wallet.json";
 const DEFAULT_BYTE_LIMIT: usize = 1024; // 1KB
 
 /// External data storage for Arweave.
@@ -18,7 +17,7 @@ const DEFAULT_BYTE_LIMIT: usize = 1024; // 1KB
 /// - `get` corresponds to downloading
 pub struct ArweaveStorage {
     /// Path to Arweave keypair (usually JSON)
-    wallet: PathBuf,
+    wallet: Option<PathBuf>,
     /// Base URL for Arweave gateway, e.g:
     /// - <https://gateway.irys.xyz>
     /// - <https://node1.bundlr.network>
@@ -58,7 +57,7 @@ impl ArweaveStorage {
         // then, check storage
         if let Some(key) = ArweaveStorage::is_key(&input_string) {
             // if its a txid, we download the data and parse it again
-            let input_bytes_from_arweave = ArweaveStorage::default()
+            let input_bytes_from_arweave = ArweaveStorage::new()
                 .get(key)
                 .await
                 .wrap_err("could not download from Arweave")?;
@@ -80,8 +79,8 @@ impl ArweaveStorage {
     ///
     /// All these variables have defaults if they are missing.
     pub fn new_from_env() -> Result<Self> {
-        let wallet = env::var("ARWEAVE_WALLET_PATH").unwrap_or(DEFAULT_WALLET_PATH.to_string());
-        let base_url = env::var("ARWEAVE_BASE_URL").unwrap_or(DEFAULT_BASE_URL.to_string());
+        let wallet = env::var("ARWEAVE_WALLET_PATH")?;
+        let base_url = env::var("ARWEAVE_BASE_URL")?;
         let byte_limit = env::var("ARWEAVE_BYTE_LIMIT")
             .unwrap_or(DEFAULT_BYTE_LIMIT.to_string())
             .parse::<usize>()
@@ -106,13 +105,6 @@ impl ArweaveStorage {
         } else {
             Ok(value)
         }
-    }
-}
-
-impl Default for ArweaveStorage {
-    fn default() -> Self {
-        Self::new(DEFAULT_BASE_URL, DEFAULT_WALLET_PATH, DEFAULT_BYTE_LIMIT)
-            .expect("Failed to create Default Arweave instance")
     }
 }
 
@@ -219,10 +211,12 @@ mod tests {
     #[tokio::test]
     #[ignore = "run manually"]
     async fn test_download_data() -> Result<()> {
+        dotenvy::dotenv().unwrap();
+
         // https://gateway.irys.xyz/Zg6CZYfxXCWYnCuKEpnZCYfy7ghit1_v4-BCe53iWuA
         let tx_id = "Zg6CZYfxXCWYnCuKEpnZCYfy7ghit1_v4-BCe53iWuA".to_string();
         let key = ArweaveKey { arweave: tx_id };
-        let arweave = ArweaveStorage::default();
+        let arweave = ArweaveStorage::new_from_env()?;
 
         let result = arweave.get(key).await?;
         let val = serde_json::from_slice::<String>(&result)?;
@@ -234,7 +228,9 @@ mod tests {
     #[tokio::test]
     #[ignore = "run manually with Arweave wallet"]
     async fn test_upload_and_download_data() -> Result<()> {
-        let arweave = ArweaveStorage::default();
+        dotenvy::dotenv().unwrap();
+
+        let arweave = ArweaveStorage::new_from_env()?;
         let input = b"Hi there Im a test data".to_vec();
 
         // put data

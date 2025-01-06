@@ -4,6 +4,7 @@ use std::time::Duration;
 use commands::Commands;
 
 mod parsers;
+use dkn_workflows::DriaWorkflowsConfig;
 use parsers::*;
 
 use crate::{DriaOracle, DriaOracleConfig};
@@ -92,6 +93,14 @@ pub async fn cli() -> Result<()> {
             }
         }
         Commands::View { task_id } => node.view_task(task_id).await?,
+        Commands::Process {
+            task_id,
+            kinds,
+            models,
+        } => {
+            node.process_task(&DriaWorkflowsConfig::new(models), &kinds, task_id)
+                .await?
+        }
         Commands::Tasks { from, to } => {
             node.view_task_events(
                 from.unwrap_or(BlockNumberOrTag::Earliest),

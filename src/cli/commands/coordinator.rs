@@ -9,7 +9,6 @@ use crate::{
 use alloy::{
     eips::BlockNumberOrTag,
     primitives::{utils::format_ether, U256},
-    rpc::types::Log,
 };
 use dkn_workflows::{DriaWorkflowsConfig, Model, ModelProvider};
 use eyre::{eyre, Context, Result};
@@ -45,6 +44,7 @@ impl DriaOracle {
                 }
             }
         }
+
         log::info!(
             "Running as: {}",
             kinds
@@ -122,8 +122,12 @@ impl DriaOracle {
                     next = event_stream.next() => {
                         match next {
                             Some(Ok((event, log))) => {
-                                self.handle_event_log(event, log, &kinds, &model_config)
-                                    .await
+                                log::debug!(
+                                    "Handling task {} (tx: {})",
+                                    event.taskId,
+                                    log.transaction_hash.unwrap_or_default()
+                                );
+                                self.handle_event_log(event, &kinds, &model_config).await
                             }
                             Some(Err(e)) => log::error!("Could not handle event: {}", e),
                             None => {
@@ -141,19 +145,16 @@ impl DriaOracle {
     async fn handle_event_log(
         &self,
         event: StatusUpdate,
-        log: Log,
         kinds: &[OracleKind],
-        model_config: &DriaWorkflowsConfig,
+        workflows: &DriaWorkflowsConfig,
     ) {
         let task_id = event.taskId;
-        log::debug!(
-            "Handling task {} (tx: {})",
-            task_id,
-            log.transaction_hash.unwrap_or_default()
-        );
+        let Ok(status) = TaskStatus::try_from(event.statusAfter) else {
+            log::error!("Could not parse task status: {}", event.statusAfter);
+            return;
+        };
 
-        // handle request
-        match handle_request(self, kinds, model_config, event).await {
+        match handle_request(self, kinds, workflows, status, event.taskId, event.protocol).await {
             Ok(Some(receipt)) => {
                 log::info!(
                     "Task {} processed successfully. (tx: {})",
@@ -171,7 +172,7 @@ impl DriaOracle {
     async fn handle_previous_tasks(
         &self,
         from_block: BlockNumberOrTag,
-        model_config: &DriaWorkflowsConfig,
+        workflows: &DriaWorkflowsConfig,
         kinds: &[OracleKind],
     ) -> Result<()> {
         log::info!(
@@ -183,19 +184,30 @@ impl DriaOracle {
             .await?;
 
         for (event, log) in prev_tasks {
+            let status_before = TaskStatus::try_from(event.statusBefore)?;
+            let status_after = TaskStatus::try_from(event.statusAfter)?;
             let task_id = event.taskId;
             log::info!(
                 "Previous task: {} ({} -> {})",
                 task_id,
-                TaskStatus::try_from(event.statusBefore).unwrap_or_default(),
-                TaskStatus::try_from(event.statusAfter).unwrap_or_default()
+                status_before,
+                status_after
             );
             log::debug!(
                 "Handling task {} (tx: {})",
                 task_id,
                 log.transaction_hash.unwrap_or_default()
             );
-            match handle_request(self, kinds, model_config, event).await {
+            match handle_request(
+                self,
+                kinds,
+                workflows,
+                status_after,
+                event.taskId,
+                event.protocol,
+            )
+            .await
+            {
                 Ok(Some(receipt)) => {
                     log::info!(
                         "Task {} processed successfully. (tx: {})",
@@ -212,6 +224,7 @@ impl DriaOracle {
 
         Ok(())
     }
+
     pub(in crate::cli) async fn view_task_events(
         &self,
         from_block: impl Into<BlockNumberOrTag> + Clone,
@@ -233,12 +246,13 @@ impl DriaOracle {
 
         let task_events = self.get_tasks_in_range(from_block, to_block).await?;
 
-        for (event, _) in task_events {
+        for (event, log) in task_events {
             log::info!(
-                "Task: {} ({} -> {})",
+                "Task {} changed from {} to {} at block {}",
                 event.taskId,
                 TaskStatus::try_from(event.statusBefore).unwrap_or_default(),
-                TaskStatus::try_from(event.statusAfter).unwrap_or_default()
+                TaskStatus::try_from(event.statusAfter).unwrap_or_default(),
+                log.block_number.unwrap_or_default()
             );
         }
 
@@ -285,6 +299,42 @@ impl DriaOracle {
                     validation.validator
                 );
             }
+        }
+
+        Ok(())
+    }
+
+    pub(in crate::cli) async fn process_task(
+        &self,
+        workflows: &DriaWorkflowsConfig,
+        kinds: &[OracleKind],
+        task_id: U256,
+    ) -> Result<()> {
+        log::info!("Processing task {}.", task_id);
+        let request = self.get_task_request(task_id).await?;
+
+        log::info!(
+            "Request Information:\nRequester: {}\nStatus:    {}\nInput:     {}\nModels:    {}",
+            request.requester,
+            TaskStatus::try_from(request.status)?,
+            bytes_to_string(&request.input)?,
+            bytes_to_string(&request.models)?
+        );
+
+        // TODO: !!!
+        let status = TaskStatus::try_from(request.status)?;
+        match handle_request(self, kinds, workflows, status, task_id, request.protocol).await {
+            Ok(Some(receipt)) => {
+                log::info!(
+                    "Task {} processed successfully. (tx: {})",
+                    task_id,
+                    receipt.transaction_hash
+                )
+            }
+            Ok(None) => {
+                log::info!("Task {} ignored.", task_id)
+            }
+            Err(e) => log::error!("Could not process task: {:?}", e),
         }
 
         Ok(())

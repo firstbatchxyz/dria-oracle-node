@@ -101,10 +101,16 @@ async fn test_swan() -> Result<()> {
     let task_id = event.taskId;
     assert_eq!(event.statusBefore, TaskStatus::None as u8);
     assert_eq!(event.statusAfter, TaskStatus::PendingGeneration as u8);
-    let generation_receipt =
-        handle_request(&generator, &[OracleKind::Generator], &workflows, event)
-            .await?
-            .unwrap();
+    let generation_receipt = handle_request(
+        &generator,
+        &[OracleKind::Generator],
+        &workflows,
+        TaskStatus::PendingGeneration,
+        event.taskId,
+        event.protocol,
+    )
+    .await?
+    .unwrap();
 
     // handle validation by reading the latest event
     let tasks = node
@@ -118,10 +124,16 @@ async fn test_swan() -> Result<()> {
     assert_eq!(event.taskId, task_id);
     assert_eq!(event.statusBefore, TaskStatus::PendingGeneration as u8);
     assert_eq!(event.statusAfter, TaskStatus::PendingValidation as u8);
-    let validation_receipt =
-        handle_request(&validator, &[OracleKind::Validator], &workflows, event)
-            .await?
-            .unwrap();
+    let validation_receipt = handle_request(
+        &validator,
+        &[OracleKind::Validator],
+        &workflows,
+        TaskStatus::PendingValidation,
+        event.taskId,
+        event.protocol,
+    )
+    .await?
+    .unwrap();
 
     let tasks = node
         .get_tasks_in_range(

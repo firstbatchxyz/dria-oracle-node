@@ -1,32 +1,46 @@
 /**
- * A helper script to print the content of an Arweave transaction, where transaction id is hex-encoded.
- * This means that the input is a 64-char hexadecimal.
+ * A helper script to print the content of an Arweave transaction.
  *
  * Usage:
  *
- *  bun run ./misc/arweave.js 0x30613233613135613236663864663332366165306137663863633636343437336238373463353966333964623436366665316337313531393634623734393231
+ * ```sh
+ * # calldata as-is
+ * bun run ./misc/arweave.js 0x7b2261727765617665223a224d49555775656361634b417a62755442335a6a57613463784e6461774d71435a704550694f71675a625a63227d
  *
- * Tip:
+ * # as an object (with escaped quotes)
+ * bun run ./misc/arweave.js "{\"arweave\":\"MIUWuecacKAzbuTB3ZjWa4cxNdawMqCZpEPiOqgZbZc\"}"
  *
- *  Can be piped to `pbcopy` on macOS to copy the output to clipboard.
+ * # base64 txid
+ * bun run ./misc/arweave.js MIUWuecacKAzbuTB3ZjWa4cxNdawMqCZpEPiOqgZbZc
+ * ```
+ *
+ * Can be piped to `pbcopy` on macOS to copy the output to clipboard.
  */
 
 // parse input
 let input = process.argv[2];
 if (!input) {
   console.error("No input provided.");
+  return;
 }
 
-// get rid of 0x
+let arweaveTxId;
 if (input.startsWith("0x")) {
-  input = input.slice(2);
+  // if it starts with 0x, we assume its all hex
+  arweaveTxId = JSON.parse(
+    Buffer.from(input.slice(2), "hex").toString()
+  ).arweave;
+} else if (input.startsWith("{")) {
+  // if it starts with {, we assume its a JSON string
+  console.log("input", input);
+  arweaveTxId = JSON.parse(input).arweave;
+} else {
+  // otherwise, we assume its a base64 txid
+  arweaveTxId = input;
 }
-const inputDecoded = Buffer.from(input, "hex").toString();
-const obj = JSON.parse(inputDecoded);
 
+// construct the URL
 // download the actual response from Arweave
-const url = `https://arweave.net/${obj.arweave}`;
-console.log(url);
+const url = `https://arweave.net/${arweaveTxId}`;
 const res = await fetch(url);
-
 console.log(await res.text());
