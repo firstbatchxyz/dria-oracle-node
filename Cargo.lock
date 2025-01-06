@@ -1967,7 +1967,6 @@ dependencies = [
  "futures-util",
  "hex",
  "hex-literal",
- "lazy_static",
  "log",
  "rand 0.8.5",
  "reqwest 0.12.9",

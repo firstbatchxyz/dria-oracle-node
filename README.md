@@ -26,6 +26,11 @@ Create an `.env` file by copying `.env.example`. You have to fill the following 
 - Get an RPC URL from a provider such as [Alchemy](https://www.alchemy.com/) or [Infura](https://www.infura.io/), and set it as `RPC_URL`.
 - Provide an Ethereum wallet secret key to `SECRET_KEY`, make sure it has funds to pay for gas and tokens.
 
+> [!NOTE]
+>
+> The contract addresses are determined with respect to the chain connected via RPC URL, but you can override it via `COORDINATOR_ADDRESS` environment variable.
+> In any case, you should not need to do this.
+
 ### Arweave
 
 You can save gas costs using [Arweave](https://arweave.org/):

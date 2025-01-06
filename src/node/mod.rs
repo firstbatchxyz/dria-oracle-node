@@ -7,6 +7,7 @@ mod anvil;
 
 use super::DriaOracleConfig;
 use crate::contracts::*;
+use alloy::hex::FromHex;
 use alloy::providers::fillers::{
     BlobGasFiller, ChainIdFiller, FillProvider, GasFiller, JoinFill, NonceFiller, WalletFiller,
 };
@@ -59,12 +60,41 @@ impl DriaOracle {
             .get_chain_id()
             .await
             .wrap_err("could not get chain id")?;
-        let chain = Chain::from_id(chain_id_u64);
+        let chain = Chain::from_id(chain_id_u64)
+            .named()
+            .expect("expected a named chain");
         log::info!("Connected to chain: {}", chain);
+
+        // get coordinator address from static list or the environment
+        // address within env can have 0x at the start, or not, does not matter
+        let coordinator_address = if let Ok(addr) = env::var("COORDINATOR_ADDRESS") {
+            Address::from_hex(addr).wrap_err("could not parse coordinator address in env")?
+        } else {
+            get_coordinator_address(chain)?
+        };
+
+        // create a coordinator instance and get token & registry addresses
+        let coordinator = OracleCoordinator::new(coordinator_address, &provider);
+        let token_address = coordinator
+            .feeToken()
+            .call()
+            .await
+            .wrap_err("could not get token address from the coordinator")?
+            ._0;
+        let registry_address = coordinator
+            .registry()
+            .call()
+            .await
+            .wrap_err("could not get registry address from the coordinator")?
+            ._0;
 
         let node = Self {
             config,
-            addresses: ADDRESSES[&chain].clone(),
+            addresses: ContractAddresses {
+                coordinator: coordinator_address,
+                registry: registry_address,
+                token: token_address,
+            },
             provider,
         };
 
