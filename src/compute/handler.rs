@@ -1,8 +1,11 @@
 use crate::{
-    contracts::{OracleCoordinator::StatusUpdate, OracleKind, TaskStatus},
+    contracts::{OracleKind, TaskStatus},
     DriaOracle,
 };
-use alloy::rpc::types::TransactionReceipt;
+use alloy::{
+    primitives::{FixedBytes, U256},
+    rpc::types::TransactionReceipt,
+};
 use dkn_workflows::DriaWorkflowsConfig;
 use eyre::Result;
 
@@ -16,41 +19,43 @@ pub async fn handle_request(
     node: &DriaOracle,
     kinds: &[OracleKind],
     workflows: &DriaWorkflowsConfig,
-    event: StatusUpdate,
+    status: TaskStatus,
+    task_id: U256,
+    protocol: FixedBytes<32>,
 ) -> Result<Option<TransactionReceipt>> {
-    log::debug!("Received event for task {} ()", event.taskId);
+    log::debug!("Received event for task {} ()", task_id);
 
     // we check the `statusAfter` field of the event, which indicates the final status of the listened task
-    let response_tx_hash = match TaskStatus::try_from(event.statusAfter)? {
+    let response_tx_hash = match status {
         TaskStatus::PendingGeneration => {
             if kinds.contains(&OracleKind::Generator) {
-                handle_generation(node, workflows, event.taskId, event.protocol).await?
+                handle_generation(node, workflows, task_id, protocol).await?
             } else {
                 log::debug!(
                     "Ignoring generation task {} as you are not generator.",
-                    event.taskId
+                    task_id
                 );
                 return Ok(None);
             }
         }
         TaskStatus::PendingValidation => {
             if kinds.contains(&OracleKind::Validator) {
-                handle_validation(node, event.taskId).await?
+                handle_validation(node, task_id).await?
             } else {
                 log::debug!(
                     "Ignoring generation task {} as you are not validator.",
-                    event.taskId
+                    task_id
                 );
                 return Ok(None);
             }
         }
         TaskStatus::Completed => {
-            log::debug!("Task {} is completed.", event.taskId);
+            log::debug!("Task {} is completed.", task_id);
             return Ok(None);
         }
         // this is kind of unexpected, but we dont have to return an error just for this
         TaskStatus::None => {
-            log::error!("None status received in an event: {}", event.taskId);
+            log::error!("None status received in an event: {}", task_id);
             return Ok(None);
         }
     };

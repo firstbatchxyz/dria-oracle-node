@@ -1,7 +1,10 @@
 mod commands;
+use std::time::Duration;
+
 use commands::Commands;
 
 mod parsers;
+use dkn_workflows::DriaWorkflowsConfig;
 use parsers::*;
 
 use crate::{DriaOracle, DriaOracleConfig};
@@ -25,6 +28,9 @@ struct Cli {
     /// Ethereum wallet's secret (private) key.
     #[arg(short, long, env = "SECRET_KEY", value_parser = parse_secret_key)]
     secret_key: B256,
+
+    #[arg(short, long, env = "TX_TIMEOUT_SECS", default_value = "30")]
+    tx_timeout: Option<u64>,
 }
 
 /// Main CLI entry point.
@@ -39,7 +45,8 @@ pub async fn cli() -> Result<()> {
 
     // create node
     let config = DriaOracleConfig::new(&secret_key, rpc_url)
-        .wrap_err("could not create oracle configuration")?;
+        .wrap_err("could not create oracle configuration")?
+        .with_tx_timeout(Duration::from_secs(30)); // timeout is 30secs by default
     let node = DriaOracle::new(config)
         .await
         .wrap_err("could not create oracle node")?;
@@ -89,6 +96,14 @@ pub async fn cli() -> Result<()> {
             }
         }
         Commands::View { task_id } => node.view_task(task_id).await?,
+        Commands::Process {
+            task_id,
+            kinds,
+            models,
+        } => {
+            node.process_task(&DriaWorkflowsConfig::new(models), &kinds, task_id)
+                .await?
+        }
         Commands::Tasks { from, to } => {
             node.view_task_events(
                 from.unwrap_or(BlockNumberOrTag::Earliest),

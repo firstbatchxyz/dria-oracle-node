@@ -26,7 +26,7 @@ impl Default for DriaOracleConfig {
 impl DriaOracleConfig {
     pub fn new(secret_key: &B256, rpc_url: Url) -> Result<Self> {
         let signer =
-            PrivateKeySigner::from_bytes(secret_key).wrap_err("Could not parse private key")?;
+            PrivateKeySigner::from_bytes(secret_key).wrap_err("could not parse private key")?;
         let wallet = EthereumWallet::from(signer);
 
         Ok(Self {
@@ -50,6 +50,8 @@ impl DriaOracleConfig {
     /// Required environment variables:
     /// - `SECRET_KEY`
     /// - `RPC_URL`
+    /// - `TX_TIMEOUT_SECS` (optional)
+    #[deprecated = "do this in tests instead"]
     pub fn new_from_env() -> Result<Self> {
         // parse private key
         let private_key_hex = env::var("SECRET_KEY").wrap_err("SECRET_KEY is not set")?;
@@ -89,6 +91,7 @@ impl DriaOracleConfig {
     }
 
     /// Enables `env_logger`.
+    #[deprecated = "do this in tests instead"]
     pub fn enable_logs(self) -> Self {
         if let Err(e) = env_logger::try_init() {
             log::error!("Error during env_logger::try_init: {}", e);

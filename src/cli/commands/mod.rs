@@ -43,7 +43,19 @@ pub enum Commands {
         models: Vec<Model>,
     },
     /// View status of a given task.
-    View { task_id: U256 },
+    View {
+        #[arg(help = "Task id.", required = true)]
+        task_id: U256,
+    },
+    /// Process a single task.
+    Process {
+        #[arg(help = "Task id.", required = true)]
+        task_id: U256,
+        #[arg(help = "The oracle kinds to handle the task as.", required = false)]
+        kinds: Vec<OracleKind>,
+        #[arg(short, long = "model", help = "The models to use for this task.", required = true, value_parser = parse_model)]
+        models: Vec<Model>,
+    },
     /// View tasks between specific blocks.
     Tasks {
         #[arg(long, help = "Starting block number, defaults to 'earliest'.", value_parser = parse_block_number_or_tag)]

@@ -23,19 +23,31 @@ cargo install --git https://github.com/firstbatchxyz/dria-oracle-node
 
 Create an `.env` file by copying `.env.example`. You have to fill the following variables:
 
-- Get an RPC URL from a provider such as Alchemy or Infura, and set it as `RPC_URL`.
-- Provide an Ethereum wallet secret koy to `SECRET_KEY`, make sure it has funds to pay for gas and tokens.
+- Get an RPC URL from a provider such as [Alchemy](https://www.alchemy.com/) or [Infura](https://www.infura.io/), and set it as `RPC_URL`.
+- Provide an Ethereum wallet secret key to `SECRET_KEY`, make sure it has funds to pay for gas and tokens.
 
-Optionally, you can save gas costs using Arweave:
+> [!NOTE]
+>
+> The contract addresses are determined with respect to the chain connected via RPC URL, but you can override it via `COORDINATOR_ADDRESS` environment variable.
+> In any case, you should not need to do this.
 
-- Provide an Arweave wallet so that you can use Arweave for large results. Alternatively, dont provide a wallet but instead set `ARWEAVE_BYTE_LIMIT` to a very large value. TODO: this should be done automatically if wallet does not exist
+### Arweave
+
+You can save gas costs using [Arweave](https://arweave.org/):
+
+- Provide an Arweave wallet via `ARWEAVE_WALLET_PATH` variable so that you can use Arweave for large results. You can create one [here](https://arweave.app/).
+- You can set `ARWEAVE_BYTE_LIMIT` to determine the byte length threshold, beyond which values are uploaded to Arweave. It defaults to 1024, so any data less than that many bytes will be written as-is.
+
+If you omit Arweave, it will only use the client for downloading things from Arweave, but will never upload.
+
+### LLM Providers
 
 As for the LLM providers:
 
 - If you are using Ollama, make sure it is running and the host & port are correct.
-- If you are using OpenAI, make sure you provide the `OPENAI_API_KEY`.
-- If you are using Gemini, make sure you provide the `GEMINI_API_KEY`.
-- If you are using OpenRouter, make sure you provide the `OPENROUTER_API_KEY`.
+- If you are using OpenAI, provide the `OPENAI_API_KEY`.
+- If you are using Gemini, provide the `GEMINI_API_KEY`.
+- If you are using OpenRouter, provide the `OPENROUTER_API_KEY`.
 
 ## Usage
 
@@ -51,6 +63,11 @@ The CLI provides several methods to interact with the oracle contracts.
 - [Launching the Node](#launching-the-node)
 - [Viewing Tasks](#viewing-tasks)
 - [Balance & Rewards](#balance--rewards)
+
+> [!TIP]
+>
+> By default logs will be `info` level, but you can add a `DEBUG=1` env variable and it will use `debug` level instead.
+> You can set `RUST_LOG` variable yourself as well.
 
 ### Registration
 
