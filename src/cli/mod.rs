@@ -44,9 +44,14 @@ pub async fn cli() -> Result<()> {
     let secret_key = cli.secret_key;
 
     // create node
-    let config = DriaOracleConfig::new(&secret_key, rpc_url)
-        .wrap_err("could not create oracle configuration")?
-        .with_tx_timeout(Duration::from_secs(30)); // timeout is 30secs by default
+    let mut config = DriaOracleConfig::new(&secret_key, rpc_url)
+        .wrap_err("could not create oracle configuration")?;
+
+    // set transaction timeout if provided
+    if let Some(timeout_secs) = cli.tx_timeout {
+        config = config.with_tx_timeout(Duration::from_secs(timeout_secs));
+    }
+
     let node = DriaOracle::new(config)
         .await
         .wrap_err("could not create oracle node")?;
