@@ -28,6 +28,9 @@ struct Cli {
     /// Ethereum wallet's secret (private) key.
     #[arg(short, long, env = "SECRET_KEY", value_parser = parse_secret_key)]
     secret_key: B256,
+
+    #[arg(short, long, env = "TX_TIMEOUT_SECS", default_value = "30")]
+    tx_timeout: Option<u64>,
 }
 
 /// Main CLI entry point.

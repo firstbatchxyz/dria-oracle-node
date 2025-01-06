@@ -188,10 +188,12 @@ impl core::fmt::Display for DriaOracle {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "Dria Oracle Node v{}\nAddress: {}\nRPC URL: {}",
+            "Dria Oracle Node v{}\nOracle Address: {}\nRPC URL: {}\nCoordinator: {}\nTx timeout: {}s",
             env!("CARGO_PKG_VERSION"),
             self.address(),
             self.config.rpc_url,
+            self.addresses.coordinator,
+            self.config.tx_timeout.map(|t| t.as_secs()).unwrap_or_default()
         )
     }
 }
