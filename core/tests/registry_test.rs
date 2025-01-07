@@ -11,8 +11,6 @@ async fn test_registry() -> Result<()> {
         .try_init();
 
     // TODO: !!!
-    // #[tokio::test]
-    // async fn test_registry_error() -> eyre::Result<()> {
     //     let config = DriaOracleConfig::new_from_env()?;
     //     let (node, _anvil) = DriaOracle::anvil_new(config).await?;
     //     assert!(node.provider.get_block_number().await? > 1);
@@ -29,9 +27,6 @@ async fn test_registry() -> Result<()> {
     //     // both errors include the node address in their message, which we look for here:
     //     let err = result.unwrap_err();
     //     err.to_string().contains(&node.address().to_string());
-
-    //     Ok(())
-    // }
 
     Ok(())
 }

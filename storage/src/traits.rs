@@ -1,5 +1,3 @@
-use std::fmt::Debug;
-
 use async_trait::async_trait;
 use eyre::Result;
 
@@ -12,7 +10,7 @@ use eyre::Result;
 #[async_trait(?Send)]
 pub trait IsExternalStorage {
     type Key: Clone;
-    type Value: Clone + Debug;
+    type Value: Clone + std::fmt::Debug;
 
     /// Returns the value (if exists) at the given key.
     /// Returns an error if the key is invalid or the value does not exist.

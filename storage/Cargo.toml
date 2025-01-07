@@ -1,6 +1,6 @@
 [package]
 name = "dria-oracle-storage"
-description = "Dria Knowledge Network Oracle Node"
+description = "Dria Oracle External Storages"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
@@ -12,25 +12,17 @@ authors.workspace = true
 # because Bundlr SDK is not maintained at all
 bundlr-sdk = { version = "0.5.0" }
 
-# core
 alloy.workspace = true
-tokio.workspace = true
-
-env_logger.workspace = true
 eyre.workspace = true
 log.workspace = true
-dotenvy.workspace = true
+
 async-trait.workspace = true
 
-# utils
-futures-util = "0.3.30"
-bytes = "1.7.1"
-rand = "0.8.5"
 reqwest = "0.12.5"
-
-# b64, hex, serde
-base64 = "0.22.1"
-hex = "0.4.3"
-hex-literal = "0.4.1"
 serde = "1.0.204"
 serde_json = "1.0.122"
+
+[dev-dependencies]
+env_logger.workspace = true
+dotenvy.workspace = true
+tokio.workspace = true
