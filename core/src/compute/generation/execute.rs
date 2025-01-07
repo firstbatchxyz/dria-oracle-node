@@ -1,4 +1,5 @@
-use crate::{storage::ArweaveStorage, DriaOracle};
+use crate::compute::parse_downloadable;
+use crate::DriaOracle;
 use alloy::primitives::U256;
 use dkn_workflows::{Executor, MessageInput, Model, ProgramMemory};
 use eyre::{eyre, Context, Result};
@@ -62,7 +63,7 @@ pub async fn execute_generation(
                     .wrap_err("could not get chat history task from contract")?;
 
                 // parse it as chat history output
-                let history_str = ArweaveStorage::parse_downloadable(&history_task.output).await?;
+                let history_str = parse_downloadable(&history_task.output).await?;
 
                 // if its a previous message array, we can parse it directly
                 if let Ok(messages) = serde_json::from_str::<Vec<MessageInput>>(&history_str) {
@@ -70,7 +71,7 @@ pub async fn execute_generation(
                 } else {
                     // otherwise, we can fallback to fetching input manually and creating a new history on-the-fly
                     let request = node.get_task_request(history_id).await?;
-                    let input = ArweaveStorage::parse_downloadable(&request.input).await?;
+                    let input = parse_downloadable(&request.input).await?;
 
                     // create a new history with the input
                     vec![

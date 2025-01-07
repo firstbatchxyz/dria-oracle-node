@@ -1,15 +1,14 @@
 use crate::{
     compute::generation::execute::execute_generation,
     contracts::{bytes32_to_string, bytes_to_string},
-    mine_nonce,
-    storage::ArweaveStorage,
-    DriaOracle,
+    mine_nonce, DriaOracle,
 };
 use alloy::{
     primitives::{FixedBytes, U256},
     rpc::types::TransactionReceipt,
 };
 use dkn_workflows::DriaWorkflowsConfig;
+use dria_oracle_storage::ArweaveStorage;
 use eyre::{Context, Result};
 
 use super::postprocess::*;

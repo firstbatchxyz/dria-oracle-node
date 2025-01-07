@@ -9,3 +9,6 @@ pub use generation::handle_generation;
 
 pub mod validation;
 pub use validation::handle_validation;
+
+mod utils;
+pub(self) use utils::parse_downloadable;

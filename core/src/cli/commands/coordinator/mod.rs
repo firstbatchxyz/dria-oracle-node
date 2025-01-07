@@ -12,7 +12,8 @@ use crate::{
 use alloy::{eips::BlockNumberOrTag, primitives::U256};
 
 use dkn_workflows::{DriaWorkflowsConfig, Model, ModelProvider};
-use eyre::{eyre, Result};
+use eyre::{eyre, Context, Result};
+use futures_util::StreamExt;
 use tokio_util::sync::CancellationToken;
 
 impl DriaOracle {

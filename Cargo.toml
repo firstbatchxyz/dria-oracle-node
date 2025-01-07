@@ -1,15 +1,16 @@
-[package]
-name = "dria-oracle"
-description = "Dria Knowledge Network Oracle Node"
-version = "0.2.2"
+[workspace]
+resolver = "2"
+members = ["core", "contracts", "storage"]
+default-members = ["core"]
+
+[workspace.package]
 edition = "2021"
+version = "0.2.32"
 license = "Apache-2.0"
 readme = "README.md"
+authors = ["erhant"]
 
-[features]
-anvil = ["alloy/node-bindings"]
-
-[dependencies]
+[workspace.dependencies]
 # core
 alloy = { version = "0.8.0", features = ["full", "node-bindings"] }
 alloy-chains = "0.1.24"
@@ -42,11 +43,3 @@ hex = "0.4.3"
 hex-literal = "0.4.1"
 serde = "1.0.204"
 serde_json = "1.0.122"
-
-# cli
-clap = { version = "4.5.13", features = ["derive", "env"] }
-
-# arweave uploader
-# NOTE: there are many unused stuff here, but everything breaks if you use the minimal set
-# because Bundlr SDK is not maintained at all
-bundlr-sdk = { version = "0.5.0" }

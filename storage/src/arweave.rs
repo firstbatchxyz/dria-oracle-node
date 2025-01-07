@@ -5,8 +5,6 @@ use eyre::{eyre, Context, Result};
 use reqwest::{Client, Url};
 use std::{env, path::PathBuf};
 
-use crate::bytes_to_string;
-
 use super::IsExternalStorage;
 
 const DEFAULT_UPLOAD_BASE_URL: &str = "https://node1.bundlr.network";
@@ -89,27 +87,6 @@ impl ArweaveStorage {
     pub fn with_upload_base_url(mut self, url: &str) -> Result<Self> {
         self.upload_base_url = Url::parse(url).wrap_err("could not parse upload base URL")?;
         Ok(self)
-    }
-
-    /// Parses a given bytes input to a string,
-    /// and if it is a storage key identifier it automatically downloads the data from Arweave.
-    pub async fn parse_downloadable(input_bytes: &Bytes) -> Result<String> {
-        // first, convert to string
-        let mut input_string = bytes_to_string(input_bytes)?;
-
-        // then, check storage
-        if let Some(key) = ArweaveStorage::is_key(&input_string) {
-            // if its a txid, we download the data and parse it again
-            let input_bytes_from_arweave = ArweaveStorage::new_readonly()
-                .get(key)
-                .await
-                .wrap_err("could not download from Arweave")?;
-
-            // convert the input to string
-            input_string = bytes_to_string(&input_bytes_from_arweave)?;
-        }
-
-        Ok(input_string)
     }
 
     /// Creates a new Arweave instance from the environment variables.

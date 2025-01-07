@@ -1,6 +1,7 @@
-use crate::{mine_nonce, storage::ArweaveStorage, DriaOracle};
+use crate::{compute::parse_downloadable, mine_nonce, DriaOracle};
 use alloy::{primitives::U256, rpc::types::TransactionReceipt};
 use dkn_workflows::Model;
+use dria_oracle_storage::ArweaveStorage;
 use eyre::{eyre, Context, Result};
 
 use super::execute::execute_validations;
@@ -45,10 +46,10 @@ pub async fn handle_validation(
         .wrap_err("could not get task responses")?;
     let mut generations = Vec::new();
     for response in responses {
-        let metadata_str = ArweaveStorage::parse_downloadable(&response.metadata).await?;
+        let metadata_str = parse_downloadable(&response.metadata).await?;
         generations.push(metadata_str);
     }
-    let input = ArweaveStorage::parse_downloadable(&request.input).await?;
+    let input = parse_downloadable(&request.input).await?;
 
     // validate each response
     log::debug!("Computing validation scores");

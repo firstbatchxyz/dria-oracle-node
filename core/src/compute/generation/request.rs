@@ -1,7 +1,8 @@
-use crate::storage::ArweaveStorage;
 use alloy::primitives::Bytes;
 use dkn_workflows::Workflow;
 use eyre::Result;
+
+use crate::compute::parse_downloadable;
 
 /// A request with chat history.
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
@@ -35,7 +36,7 @@ impl GenerationRequest {
 
     /// Given an input of byte-slice, parses it into a valid request type.
     pub async fn try_parse_bytes(input_bytes: &Bytes) -> Result<Self> {
-        let input_string = ArweaveStorage::parse_downloadable(input_bytes).await?;
+        let input_string = parse_downloadable(input_bytes).await?;
         log::debug!("Parsing input string: {}", input_string);
         Ok(Self::try_parse_string(input_string).await)
     }

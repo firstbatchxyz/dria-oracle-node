@@ -1,4 +1,4 @@
-#![doc = include_str!("../README.md")]
+#![doc = include_str!("../../README.md")]
 
 mod cli;
 pub use cli::cli;
@@ -17,6 +17,3 @@ mod contracts;
 pub use contracts::{bytes32_to_string, bytes_to_string, string_to_bytes, string_to_bytes32};
 pub use contracts::{OracleCoordinator, OracleRegistry, ERC20, WETH};
 pub use contracts::{OracleKind, TaskStatus};
-
-/// External data storage, such as Arweave.
-pub mod storage;
