@@ -2,7 +2,6 @@ use alloy::{
     primitives::{Bytes, FixedBytes},
     sol,
 };
-use clap::ValueEnum;
 use eyre::{Context, Result};
 
 use self::OracleCoordinator::StatusUpdate;
@@ -36,6 +35,40 @@ sol!(
     OracleCoordinator,
     "./abi/LLMOracleCoordinator.json"
 );
+
+/// `OracleKind` as it appears within the registry.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum OracleKind {
+    Generator,
+    Validator,
+}
+
+impl From<OracleKind> for u8 {
+    fn from(kind: OracleKind) -> u8 {
+        kind as u8
+    }
+}
+
+impl TryFrom<u8> for OracleKind {
+    type Error = eyre::Error;
+
+    fn try_from(value: u8) -> Result<Self, Self::Error> {
+        match value {
+            0 => Ok(OracleKind::Generator),
+            1 => Ok(OracleKind::Validator),
+            _ => Err(eyre::eyre!("Invalid OracleKind: {}", value)),
+        }
+    }
+}
+
+impl std::fmt::Display for OracleKind {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            OracleKind::Generator => write!(f, "Generator"),
+            OracleKind::Validator => write!(f, "Validator"),
+        }
+    }
+}
 
 /// `TaskStatus` as it appears within the coordinator.
 #[derive(Debug, Clone, Copy, Default)]
@@ -85,40 +118,6 @@ impl std::fmt::Display for StatusUpdate {
             "Task {}: {} -> {}",
             self.taskId, self.statusBefore, self.statusAfter
         )
-    }
-}
-
-/// `OracleKind` as it appears within the registry.
-#[derive(Debug, Clone, Copy, PartialEq, ValueEnum)]
-pub enum OracleKind {
-    Generator,
-    Validator,
-}
-
-impl From<OracleKind> for u8 {
-    fn from(kind: OracleKind) -> u8 {
-        kind as u8
-    }
-}
-
-impl TryFrom<u8> for OracleKind {
-    type Error = eyre::Error;
-
-    fn try_from(value: u8) -> Result<Self, Self::Error> {
-        match value {
-            0 => Ok(OracleKind::Generator),
-            1 => Ok(OracleKind::Validator),
-            _ => Err(eyre::eyre!("Invalid OracleKind: {}", value)),
-        }
-    }
-}
-
-impl std::fmt::Display for OracleKind {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            OracleKind::Generator => write!(f, "Generator"),
-            OracleKind::Validator => write!(f, "Validator"),
-        }
     }
 }
 

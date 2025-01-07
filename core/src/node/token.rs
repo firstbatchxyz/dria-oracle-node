@@ -1,7 +1,7 @@
 use super::DriaOracle;
-use crate::contracts::*;
 use alloy::primitives::{Address, U256};
 use alloy::rpc::types::TransactionReceipt;
+use dria_oracle_contracts::{contract_error_report, TokenBalance, ERC20};
 use eyre::{Context, Result};
 
 impl DriaOracle {

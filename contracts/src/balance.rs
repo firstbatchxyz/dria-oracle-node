@@ -14,10 +14,10 @@ pub struct TokenBalance {
 
 impl TokenBalance {
     /// Create a new token result.
-    pub fn new(amount: U256, symbol: String, address: Option<Address>) -> Self {
+    pub fn new(amount: U256, symbol: impl ToString, address: Option<Address>) -> Self {
         Self {
             amount,
-            symbol,
+            symbol: symbol.to_string(),
             address,
         }
     }

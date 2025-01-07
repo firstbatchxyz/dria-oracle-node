@@ -4,10 +4,8 @@ use alloy::{
     sol_types::SolValue,
 };
 use dkn_workflows::{DriaWorkflowsConfig, Model};
-use dria_oracle::{
-    bytes_to_string, handle_request, string_to_bytes, DriaOracle, DriaOracleConfig, OracleKind,
-    TaskStatus, WETH,
-};
+use dria_oracle::{handle_request, DriaOracle, DriaOracleConfig};
+use dria_oracle_contracts::{bytes_to_string, string_to_bytes, OracleKind, TaskStatus, WETH};
 use eyre::Result;
 
 #[tokio::test]

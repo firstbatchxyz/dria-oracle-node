@@ -7,7 +7,6 @@ mod workflows;
 mod anvil;
 
 use super::DriaOracleConfig;
-use crate::contracts::*;
 use alloy::hex::FromHex;
 use alloy::providers::fillers::{
     BlobGasFiller, ChainIdFiller, FillProvider, GasFiller, JoinFill, NonceFiller, WalletFiller,
@@ -20,6 +19,9 @@ use alloy::{
     transports::http::{Client, Http},
 };
 use alloy_chains::Chain;
+use dria_oracle_contracts::{
+    get_coordinator_address, ContractAddresses, OracleCoordinator, OracleRegistry, TokenBalance,
+};
 use eyre::{eyre, Context, Result};
 use std::env;
 

@@ -3,10 +3,8 @@
 //! This module is only available when the `anvil` feature is enabled,
 //! which is only expected to happen in tests.
 
-use crate::node::contract_error_report;
-use crate::OracleRegistry;
-
 use super::{DriaOracle, DriaOracleConfig};
+
 use alloy::network::EthereumWallet;
 use alloy::node_bindings::{Anvil, AnvilInstance};
 use alloy::primitives::Address;
@@ -14,6 +12,7 @@ use alloy::primitives::{utils::parse_ether, U256};
 use alloy::providers::ext::AnvilApi;
 use alloy::rpc::types::TransactionReceipt;
 use alloy::signers::local::PrivateKeySigner;
+use dria_oracle_contracts::{contract_error_report, OracleRegistry};
 use eyre::{Context, Result};
 
 impl DriaOracle {

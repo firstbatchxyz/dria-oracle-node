@@ -3,13 +3,11 @@ mod view;
 
 use std::time::Duration;
 
-use crate::{
-    compute::handle_request,
-    contracts::{bytes_to_string, OracleKind, TaskStatus},
-    DriaOracle,
-    OracleCoordinator::StatusUpdate,
-};
+use crate::{compute::handle_request, DriaOracle};
 use alloy::{eips::BlockNumberOrTag, primitives::U256};
+use dria_oracle_contracts::{
+    bytes_to_string, OracleCoordinator::StatusUpdate, OracleKind, TaskStatus,
+};
 
 use dkn_workflows::{DriaWorkflowsConfig, Model, ModelProvider};
 use eyre::{eyre, Context, Result};

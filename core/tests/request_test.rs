@@ -6,7 +6,8 @@
 
 use alloy::primitives::{aliases::U40, utils::parse_ether};
 use dkn_workflows::Model;
-use dria_oracle::{bytes_to_string, DriaOracle, DriaOracleConfig, WETH};
+use dria_oracle::{DriaOracle, DriaOracleConfig};
+use dria_oracle_contracts::{bytes_to_string, WETH};
 use eyre::Result;
 
 #[tokio::test]

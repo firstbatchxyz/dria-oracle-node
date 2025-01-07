@@ -1,7 +1,6 @@
-use crate::{
-    contracts::{OracleKind, TaskStatus},
-    DriaOracle,
-};
+use crate::DriaOracle;
+use dria_oracle_contracts::{OracleKind, TaskStatus};
+
 use alloy::{
     primitives::{FixedBytes, U256},
     rpc::types::TransactionReceipt,

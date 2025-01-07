@@ -3,22 +3,22 @@ mod registry;
 mod token;
 
 use super::parsers::*;
-use crate::contracts::OracleKind;
 use alloy::{eips::BlockNumberOrTag, primitives::U256};
 use clap::Subcommand;
 use dkn_workflows::Model;
+use dria_oracle_contracts::OracleKind;
 
 // https://docs.rs/clap/latest/clap/_derive/index.html#arg-attributes
 #[derive(Subcommand)]
 pub enum Commands {
     /// Register oracle as a specific oracle kind.
     Register {
-        #[arg(help = "The oracle kinds to register as.", required = true)]
+        #[arg(help = "The oracle kinds to register as.", required = true, value_parser = parse_oracle_kind)]
         kinds: Vec<OracleKind>,
     },
     /// Unregister oracle as a specific oracle kind.
     Unregister {
-        #[arg(help = "The oracle kinds to unregister as.", required = true)]
+        #[arg(help = "The oracle kinds to unregister as.", required = true, value_parser = parse_oracle_kind)]
         kinds: Vec<OracleKind>,
     },
     /// See all registrations.
@@ -43,7 +43,7 @@ pub enum Commands {
             value_parser = parse_block_number_or_tag
         )]
         to: Option<BlockNumberOrTag>,
-        #[arg(help = "The oracle kinds to handle tasks as.", required = false)]
+        #[arg(help = "The oracle kinds to handle tasks as.", required = false, value_parser = parse_oracle_kind)]
         kinds: Vec<OracleKind>,
         #[arg(short, long = "model", help = "The models to serve.", required = true, value_parser = parse_model)]
         models: Vec<Model>,
@@ -57,7 +57,7 @@ pub enum Commands {
     Process {
         #[arg(help = "Task id.", required = true)]
         task_id: U256,
-        #[arg(help = "The oracle kinds to handle the task as.", required = false)]
+        #[arg(help = "The oracle kinds to handle the task as.", required = false, value_parser = parse_oracle_kind)]
         kinds: Vec<OracleKind>,
         #[arg(short, long = "model", help = "The models to use for this task.", required = true, value_parser = parse_model)]
         models: Vec<Model>,

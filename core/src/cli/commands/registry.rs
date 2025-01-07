@@ -1,5 +1,6 @@
-use crate::{contracts::OracleKind, DriaOracle};
+use crate::DriaOracle;
 use alloy::primitives::utils::format_ether;
+use dria_oracle_contracts::OracleKind;
 use eyre::Result;
 
 impl DriaOracle {

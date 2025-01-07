@@ -1983,7 +1983,6 @@ version = "0.2.32"
 dependencies = [
  "alloy",
  "alloy-chains",
- "clap",
  "eyre",
  "tokio 1.42.0",
  "tokio-util 0.7.13",

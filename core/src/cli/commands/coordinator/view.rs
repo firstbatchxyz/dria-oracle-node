@@ -1,11 +1,8 @@
-use crate::{
-    contracts::{bytes_to_string, TaskStatus},
-    DriaOracle,
-};
 use alloy::{eips::BlockNumberOrTag, primitives::U256};
+use dria_oracle_contracts::{bytes_to_string, TaskStatus};
 use eyre::Result;
 
-impl DriaOracle {
+impl crate::DriaOracle {
     /// Views the task events between two blocks, logs everything on screen.
     pub(in crate::cli) async fn view_task_events(
         &self,

@@ -1,7 +1,6 @@
 use dkn_workflows::DriaWorkflowsConfig;
+use dria_oracle_contracts::OracleKind;
 use tokio_util::sync::CancellationToken;
-
-use super::OracleKind;
 
 /// A utility struct to be used with tasks.
 ///
@@ -13,3 +12,5 @@ pub struct DriaOracleWorkflows {
     pub config: DriaWorkflowsConfig,
     pub cancellation: CancellationToken,
 }
+
+// TODO: !!!

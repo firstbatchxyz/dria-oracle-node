@@ -1,5 +1,6 @@
 use alloy::{eips::BlockNumberOrTag, hex::FromHex, primitives::B256};
 use dkn_workflows::Model;
+use dria_oracle_contracts::OracleKind;
 use eyre::{eyre, Result};
 use reqwest::Url;
 use std::str::FromStr;
@@ -17,6 +18,14 @@ pub fn parse_url(value: &str) -> Result<Url> {
 /// `value_parser` to parse a hexadecimal `str` to 256-bit type `B256`.
 pub fn parse_secret_key(value: &str) -> Result<B256> {
     B256::from_hex(value).map_err(Into::into)
+}
+
+pub fn parse_oracle_kind(value: &str) -> Result<OracleKind> {
+    match value {
+        "generator" => Ok(OracleKind::Generator),
+        "validator" => Ok(OracleKind::Validator),
+        _ => Err(eyre!("Invalid OracleKind: {}", value)),
+    }
 }
 
 /// `value parser` to parse a `str` to `BlockNumberOrTag`

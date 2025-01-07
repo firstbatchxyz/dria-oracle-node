@@ -12,7 +12,3 @@ alloy-chains.workspace = true
 tokio.workspace = true
 tokio-util.workspace = true
 eyre.workspace = true
-
-# cli
-# TODO: we only have this for ValueEnum, should be removable
-clap = { version = "4.5.13", features = ["derive", "env"] }

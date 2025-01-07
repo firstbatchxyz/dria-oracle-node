@@ -29,10 +29,12 @@ struct Cli {
     #[arg(short, long, env = "SECRET_KEY", value_parser = parse_secret_key)]
     secret_key: B256,
 
+    /// Timeout for waiting transactions to be confirmed, in seconds.
     #[arg(short, long, env = "TX_TIMEOUT_SECS", default_value = "30")]
     tx_timeout: Option<u64>,
 
-    #[arg(short, long, help = "Path to the .env file", default_value = "./.env")]
+    /// Path to the .env file
+    #[arg(short, long, default_value = "./.env")]
     env: PathBuf,
 }
 

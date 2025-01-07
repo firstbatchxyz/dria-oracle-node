@@ -1,15 +1,18 @@
-use self::OracleCoordinator::getFeeReturn;
 use super::{DriaOracle, DriaOracleProviderTransport};
-use crate::contracts::*;
+
 use alloy::contract::EventPoller;
 use alloy::eips::BlockNumberOrTag;
 use alloy::primitives::aliases::U40;
 use alloy::primitives::{Bytes, U256};
 use alloy::rpc::types::{Log, TransactionReceipt};
+use dria_oracle_contracts::LLMOracleTask::{TaskResponse, TaskValidation};
+use dria_oracle_contracts::{contract_error_report, string_to_bytes32};
 use eyre::{eyre, Context, Result};
-use LLMOracleTask::{TaskResponse, TaskValidation};
-use OracleCoordinator::LLMOracleTaskParameters;
-use OracleCoordinator::{getResponsesReturn, getValidationsReturn, requestsReturn, StatusUpdate};
+
+use dria_oracle_contracts::OracleCoordinator::{
+    self, getFeeReturn, getResponsesReturn, getValidationsReturn, requestsReturn,
+    LLMOracleTaskParameters, StatusUpdate,
+};
 
 impl DriaOracle {
     /// Request an oracle task. This is not done by the oracle normally, but we have it added for testing purposes.

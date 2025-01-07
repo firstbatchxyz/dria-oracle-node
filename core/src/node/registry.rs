@@ -1,9 +1,10 @@
-use super::{DriaOracle, TokenBalance};
-use crate::{node::contract_error_report, OracleKind, OracleRegistry, ERC20};
 use alloy::{primitives::Address, rpc::types::TransactionReceipt};
+use dria_oracle_contracts::{
+    contract_error_report, OracleKind, OracleRegistry, TokenBalance, ERC20,
+};
 use eyre::{eyre, Context, Result};
 
-impl DriaOracle {
+impl crate::DriaOracle {
     /// Register the oracle with the registry.
     pub async fn register_kind(&self, kind: OracleKind) -> Result<TransactionReceipt> {
         let registry = OracleRegistry::new(self.addresses.registry, &self.provider);

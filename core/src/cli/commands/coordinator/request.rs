@@ -1,9 +1,9 @@
-use crate::{contracts::string_to_bytes, DriaOracle};
 use alloy::primitives::utils::format_ether;
 use dkn_workflows::Model;
+use dria_oracle_contracts::string_to_bytes;
 use eyre::Result;
 
-impl DriaOracle {
+impl crate::DriaOracle {
     /// Requests a task with the given parameters.
     ///
     /// Oracle does not usually do this, but we still provide the capability for testing & playing around.
