@@ -1,5 +1,5 @@
 mod commands;
-use std::time::Duration;
+use std::{path::PathBuf, time::Duration};
 
 use commands::Commands;
 
@@ -31,6 +31,9 @@ struct Cli {
 
     #[arg(short, long, env = "TX_TIMEOUT_SECS", default_value = "30")]
     tx_timeout: Option<u64>,
+
+    #[arg(short, long, help = "Path to the .env file", default_value = "./.env")]
+    env: PathBuf,
 }
 
 /// Main CLI entry point.
@@ -52,9 +55,7 @@ pub async fn cli() -> Result<()> {
         config = config.with_tx_timeout(Duration::from_secs(timeout_secs));
     }
 
-    let node = DriaOracle::new(config)
-        .await
-        .wrap_err("could not create oracle node")?;
+    let node = DriaOracle::new(config).await?;
     log::info!("{}", node);
     log::info!("{}", node.addresses);
 
@@ -77,6 +78,7 @@ pub async fn cli() -> Result<()> {
             kinds,
             models,
             from,
+            to,
         } => {
             let token = CancellationToken::new();
 

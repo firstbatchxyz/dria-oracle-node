@@ -47,9 +47,17 @@ pub async fn execute_generation(
                 // if task id is zero, there is no prior history
                 Vec::new()
             } else if let Some(node) = node {
+                let history_id = U256::from(chat_request.history_id);
                 // if task id is non-zero, we need the node to get the history
+                // first make sure that next-task-id is larger than the history
+                if history_id >= node.get_next_task_id().await? {
+                    return Err(eyre!(
+                        "chat history cant exist as its larger than the latest task id"
+                    ));
+                }
+
                 let history_task = node
-                    .get_task_best_response(U256::from(chat_request.history_id))
+                    .get_task_best_response(history_id)
                     .await
                     .wrap_err("could not get chat history task from contract")?;
 
@@ -61,9 +69,7 @@ pub async fn execute_generation(
                     messages
                 } else {
                     // otherwise, we can fallback to fetching input manually and creating a new history on-the-fly
-                    let request = node
-                        .get_task_request(U256::from(chat_request.history_id))
-                        .await?;
+                    let request = node.get_task_request(history_id).await?;
                     let input = ArweaveStorage::parse_downloadable(&request.input).await?;
 
                     // create a new history with the input

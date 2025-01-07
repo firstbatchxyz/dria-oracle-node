@@ -12,7 +12,6 @@ use eyre::Result;
 #[tokio::test]
 async fn test_request() -> Result<()> {
     dotenvy::dotenv().unwrap();
-
     let _ = env_logger::builder()
         .filter_level(log::LevelFilter::Off)
         .filter_module("dria_oracle", log::LevelFilter::Debug)

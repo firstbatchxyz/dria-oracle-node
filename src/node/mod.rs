@@ -1,6 +1,7 @@
 mod coordinator;
 mod registry;
 mod token;
+mod workflows;
 
 #[cfg(feature = "anvil")]
 mod anvil;
@@ -43,6 +44,9 @@ pub struct DriaOracle {
     pub addresses: ContractAddresses,
     /// Underlying provider type.
     pub provider: DriaOracleProvider,
+    /// Workflows configurations.
+    /// This is only needed when the oracle is running to handle tasks.
+    pub workflows: Option<workflows::DriaOracleWorkflows>,
 }
 
 impl DriaOracle {
@@ -96,6 +100,7 @@ impl DriaOracle {
                 token: token_address,
             },
             provider,
+            workflows: None,
         };
 
         node.check_contract_sizes().await?;
@@ -116,6 +121,7 @@ impl DriaOracle {
             provider,
             config: self.config.clone().with_wallet(wallet),
             addresses: self.addresses.clone(),
+            workflows: self.workflows.clone(),
         }
     }
 

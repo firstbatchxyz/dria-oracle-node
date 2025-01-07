@@ -170,7 +170,7 @@ The `request` command takes the following options:
 There are 3 types of requests:
 
 - **String**: simple text
-- **Chat**: an object of the form `{history_id: number, content: string}` which uses a previous task as history; TODO: history > nextTaskId handled?
+- **Chat**: an object of the form `{history_id: number, content: string}` which uses a previous task as history
 - **Workflow**: a stringified Workflow object
 
 ## Development

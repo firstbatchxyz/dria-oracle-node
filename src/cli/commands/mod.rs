@@ -33,10 +33,16 @@ pub enum Commands {
     Start {
         #[arg(
             long,
-            help = "Starting block number to listen for, defaults to 'latest'.",
+            help = "Block number to starting listening from, omit to start from latest block.",
             value_parser = parse_block_number_or_tag
         )]
         from: Option<BlockNumberOrTag>,
+        #[arg(
+            long,
+            help = "Block number to stop listening at, omit to keep running the node indefinitely.",
+            value_parser = parse_block_number_or_tag
+        )]
+        to: Option<BlockNumberOrTag>,
         #[arg(help = "The oracle kinds to handle tasks as.", required = false)]
         kinds: Vec<OracleKind>,
         #[arg(short, long = "model", help = "The models to serve.", required = true, value_parser = parse_model)]

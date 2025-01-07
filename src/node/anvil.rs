@@ -1,6 +1,7 @@
 //! Anvil-related utilities.
 //!
-//! This module is only available when the `anvil` feature is enabled.
+//! This module is only available when the `anvil` feature is enabled,
+//! which is only expected to happen in tests.
 
 use crate::node::contract_error_report;
 use crate::OracleRegistry;

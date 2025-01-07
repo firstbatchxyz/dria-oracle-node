@@ -10,45 +10,47 @@ impl DriaOracle {
     ///   to the registry and then register the node.
     pub async fn register(&self, kind: OracleKind) -> Result<()> {
         log::info!("Registering as a {}.", kind);
+
         // check if registered already
         if self.is_registered(kind).await? {
             log::warn!("You are already registered as a {}.", kind);
-        } else {
-            // calculate the required approval for registration
-            let stake = self.registry_stake_amount(kind).await?;
-            let allowance = self
-                .allowance(self.address(), self.addresses.registry)
-                .await?;
+            return Ok(());
+        }
 
-            // approve if necessary
-            if allowance.amount < stake.amount {
-                let difference = stake.amount - allowance.amount;
-                log::info!(
-                    "Approving {} tokens for {} registration.",
-                    format_ether(difference),
-                    kind
-                );
+        // calculate the required approval for registration
+        let stake = self.registry_stake_amount(kind).await?;
+        let allowance = self
+            .allowance(self.address(), self.addresses.registry)
+            .await?;
 
-                // check balance
-                let balance = self.get_token_balance(self.address()).await?;
-                if balance.amount < difference {
-                    return Err(eyre::eyre!(
-                        "Not enough balance to approve. (have: {}, required: {})",
-                        balance,
-                        difference
-                    ));
-                }
+        // approve if necessary
+        if allowance.amount < stake.amount {
+            let difference = stake.amount - allowance.amount;
+            log::info!(
+                "Approving {} tokens for {} registration.",
+                format_ether(difference),
+                kind
+            );
 
-                // approve the difference
-                self.approve(self.addresses.registry, difference).await?;
-            } else {
-                log::info!("Already approved enough tokens.");
+            // check balance
+            let balance = self.get_token_balance(self.address()).await?;
+            if balance.amount < difference {
+                return Err(eyre::eyre!(
+                    "Not enough balance to approve. (have: {}, required: {})",
+                    balance,
+                    difference
+                ));
             }
 
-            // register
-            log::info!("Registering.");
-            self.register_kind(kind).await?;
+            // approve the difference
+            self.approve(self.addresses.registry, difference).await?;
+        } else {
+            log::info!("Already approved enough tokens.");
         }
+
+        // register
+        log::info!("Registering.");
+        self.register_kind(kind).await?;
 
         Ok(())
     }
@@ -60,24 +62,27 @@ impl DriaOracle {
     ///   from the registry back to the oracle.
     pub async fn unregister(&self, kind: OracleKind) -> Result<()> {
         log::info!("Unregistering as {}.", kind);
+
         // check if not registered anyways
         if !self.is_registered(kind).await? {
             log::warn!("You are already not registered as a {}.", kind);
-        } else {
-            self.unregister_kind(kind).await?;
-
-            // transfer all allowance from registry back to oracle
-            // to get back the registrations fee
-            let allowance = self
-                .allowance(self.addresses.registry, self.address())
-                .await?;
-            log::info!(
-                "Transferring all allowance ({}) back from registry.",
-                allowance
-            );
-            self.transfer_from(self.addresses.registry, self.address(), allowance.amount)
-                .await?;
+            return Ok(());
         }
+
+        self.unregister_kind(kind).await?;
+
+        // transfer all allowance from registry back to oracle
+        // to get back the registrations fee
+        let allowance = self
+            .allowance(self.addresses.registry, self.address())
+            .await?;
+        log::info!(
+            "Transferring all allowance ({}) back from registry.",
+            allowance
+        );
+        self.transfer_from(self.addresses.registry, self.address(), allowance.amount)
+            .await?;
+
         Ok(())
     }
 

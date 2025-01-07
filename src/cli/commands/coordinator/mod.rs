@@ -1,18 +1,18 @@
+mod request;
+mod view;
+
 use std::time::Duration;
 
 use crate::{
     compute::handle_request,
-    contracts::{bytes_to_string, string_to_bytes, OracleKind, TaskStatus},
+    contracts::{bytes_to_string, OracleKind, TaskStatus},
     DriaOracle,
     OracleCoordinator::StatusUpdate,
 };
-use alloy::{
-    eips::BlockNumberOrTag,
-    primitives::{utils::format_ether, U256},
-};
+use alloy::{eips::BlockNumberOrTag, primitives::U256};
+
 use dkn_workflows::{DriaWorkflowsConfig, Model, ModelProvider};
-use eyre::{eyre, Context, Result};
-use futures_util::StreamExt;
+use eyre::{eyre, Result};
 use tokio_util::sync::CancellationToken;
 
 impl DriaOracle {
@@ -225,85 +225,6 @@ impl DriaOracle {
         Ok(())
     }
 
-    pub(in crate::cli) async fn view_task_events(
-        &self,
-        from_block: impl Into<BlockNumberOrTag> + Clone,
-        to_block: impl Into<BlockNumberOrTag> + Clone,
-    ) -> Result<()> {
-        let from_block: BlockNumberOrTag = from_block.clone().into();
-        let to_block: BlockNumberOrTag = to_block.clone().into();
-        log::info!(
-            "Viewing task ids & statuses between blocks: {} - {}",
-            from_block
-                .as_number()
-                .map(|n| n.to_string())
-                .unwrap_or(from_block.to_string()),
-            to_block
-                .as_number()
-                .map(|n| n.to_string())
-                .unwrap_or(to_block.to_string())
-        );
-
-        let task_events = self.get_tasks_in_range(from_block, to_block).await?;
-
-        for (event, log) in task_events {
-            log::info!(
-                "Task {} changed from {} to {} at block {}",
-                event.taskId,
-                TaskStatus::try_from(event.statusBefore).unwrap_or_default(),
-                TaskStatus::try_from(event.statusAfter).unwrap_or_default(),
-                log.block_number.unwrap_or_default()
-            );
-        }
-
-        Ok(())
-    }
-
-    pub(in crate::cli) async fn view_task(&self, task_id: U256) -> Result<()> {
-        log::info!("Viewing task {}.", task_id);
-        let (request, responses, validations) = self.get_task(task_id).await?;
-
-        log::info!(
-            "Request Information:\nRequester: {}\nStatus:    {}\nInput:     {}\nModels:    {}",
-            request.requester,
-            TaskStatus::try_from(request.status)?,
-            bytes_to_string(&request.input)?,
-            bytes_to_string(&request.models)?
-        );
-
-        log::info!("Responses:");
-        if responses._0.is_empty() {
-            log::warn!("There are no responses yet.");
-        } else {
-            for (idx, response) in responses._0.iter().enumerate() {
-                log::info!(
-                    "Response  #{}\nOutput:    {}\nMetadata:  {}\nGenerator: {}",
-                    idx,
-                    bytes_to_string(&response.output)?,
-                    bytes_to_string(&response.metadata)?,
-                    response.responder
-                );
-            }
-        }
-
-        log::info!("Validations:");
-        if validations._0.is_empty() {
-            log::warn!("There are no validations yet.");
-        } else {
-            for (idx, validation) in validations._0.iter().enumerate() {
-                log::info!(
-                    "Validation #{}\nScores:     {:?}\nMetadata:   {}\nValidator:  {}",
-                    idx,
-                    validation.scores,
-                    bytes_to_string(&validation.metadata)?,
-                    validation.validator
-                );
-            }
-        }
-
-        Ok(())
-    }
-
     pub(in crate::cli) async fn process_task(
         &self,
         workflows: &DriaWorkflowsConfig,
@@ -321,7 +242,6 @@ impl DriaOracle {
             bytes_to_string(&request.models)?
         );
 
-        // TODO: !!!
         let status = TaskStatus::try_from(request.status)?;
         match handle_request(self, kinds, workflows, status, task_id, request.protocol).await {
             Ok(Some(receipt)) => {
@@ -336,67 +256,6 @@ impl DriaOracle {
             }
             Err(e) => log::error!("Could not process task: {:?}", e),
         }
-
-        Ok(())
-    }
-
-    pub async fn request_task(
-        &self,
-        input: &str,
-        models: Vec<Model>,
-        difficulty: u8,
-        num_gens: u64,
-        num_vals: u64,
-        protocol: String,
-    ) -> Result<()> {
-        let input = string_to_bytes(input.to_string());
-        let models_str = models
-            .iter()
-            .map(|m| m.to_string())
-            .collect::<Vec<String>>()
-            .join(",");
-        let models = string_to_bytes(models_str);
-        log::info!("Requesting a new task.");
-
-        // get total fee for the request
-        let total_fee = self
-            .get_request_fee(difficulty, num_gens, num_vals)
-            .await?
-            .totalFee;
-
-        // check balance
-        let balance = self.get_token_balance(self.address()).await?.amount;
-        if balance < total_fee {
-            return Err(eyre!("Insufficient balance. Please fund your wallet."));
-        }
-
-        // check current allowance
-        let allowance = self
-            .allowance(self.address(), self.addresses.coordinator)
-            .await?
-            .amount;
-
-        // make sure we have enough allowance
-        if allowance < total_fee {
-            let approval_amount = total_fee - allowance;
-            log::info!(
-                "Insufficient allowance. Approving the required amount: {}.",
-                format_ether(approval_amount)
-            );
-
-            self.approve(self.addresses.coordinator, approval_amount)
-                .await?;
-            log::info!("Token approval successful.");
-        }
-
-        // make the request
-        let receipt = self
-            .request(input, models, difficulty, num_gens, num_vals, protocol)
-            .await?;
-        log::info!(
-            "Task requested successfully. tx: {}",
-            receipt.transaction_hash
-        );
 
         Ok(())
     }

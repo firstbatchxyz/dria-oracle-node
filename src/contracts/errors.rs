@@ -204,7 +204,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_registry_error() -> eyre::Result<()> {
-        let config = DriaOracleConfig::new_from_env()?.enable_logs();
+        let config = DriaOracleConfig::new_from_env()?;
         let (node, _anvil) = DriaOracle::anvil_new(config).await?;
         assert!(node.provider.get_block_number().await? > 1);
 
