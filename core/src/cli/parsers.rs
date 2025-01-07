@@ -20,6 +20,10 @@ pub fn parse_secret_key(value: &str) -> Result<B256> {
     B256::from_hex(value).map_err(Into::into)
 }
 
+/// `value_parser` to parse a `str` to `OracleKind`.
+///
+/// This could be done with `ValueEnum` as well, but we prefer this to not
+/// require `clap` in another crate for just that reason.
 pub fn parse_oracle_kind(value: &str) -> Result<OracleKind> {
     match value {
         "generator" => Ok(OracleKind::Generator),

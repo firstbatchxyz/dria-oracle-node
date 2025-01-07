@@ -31,6 +31,18 @@ Create an `.env` file by copying `.env.example`. You have to fill the following 
 > The contract addresses are determined with respect to the chain connected via RPC URL, but you can override it via `COORDINATOR_ADDRESS` environment variable.
 > In any case, you should not need to do this.
 
+> [!TIP]
+>
+> You can have multiple environment files, and specify them explicitly with the `-e` argument, e.g.
+>
+> ```sh
+> # base sepolia
+> dria-oracle -e ./.env.base-sepolia registrations
+>
+> # base mainnet
+> dria-oracle -e ./.env.base-mainnet registrations
+> ```
+
 ### Arweave
 
 You can save gas costs using [Arweave](https://arweave.org/):
@@ -66,8 +78,7 @@ The CLI provides several methods to interact with the oracle contracts.
 
 > [!TIP]
 >
-> By default logs will be `info` level, but you can add a `DEBUG=1` env variable and it will use `debug` level instead.
-> You can set `RUST_LOG` variable yourself as well.
+> You can enable debug-level logs with the `-d` option.
 
 ### Registration
 

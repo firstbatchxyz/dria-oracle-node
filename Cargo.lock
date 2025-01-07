@@ -1984,8 +1984,6 @@ dependencies = [
  "alloy",
  "alloy-chains",
  "eyre",
- "tokio 1.42.0",
- "tokio-util 0.7.13",
 ]
 
 [[package]]

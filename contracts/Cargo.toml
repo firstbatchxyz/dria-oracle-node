@@ -9,6 +9,4 @@ authors.workspace = true
 [dependencies]
 alloy.workspace = true
 alloy-chains.workspace = true
-tokio.workspace = true
-tokio-util.workspace = true
 eyre.workspace = true

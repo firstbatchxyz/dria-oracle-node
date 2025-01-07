@@ -1,67 +1,53 @@
 mod commands;
-use std::{path::PathBuf, time::Duration};
-
 use commands::Commands;
 
 mod parsers;
-use dkn_workflows::DriaWorkflowsConfig;
 use parsers::*;
 
-use crate::{DriaOracle, DriaOracleConfig};
 use alloy::{eips::BlockNumberOrTag, primitives::B256};
 use clap::Parser;
-use eyre::{Context, Result};
+use dkn_workflows::DriaWorkflowsConfig;
+use eyre::Result;
 use reqwest::Url;
+use std::{env, path::PathBuf};
 use tokio_util::sync::CancellationToken;
 
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
 #[command(propagate_version = true)]
-struct Cli {
+pub struct Cli {
     #[command(subcommand)]
-    command: Commands,
-
-    /// RPC URL of the Ethereum node.
-    #[arg(short, long, env = "RPC_URL", value_parser = parse_url)]
-    rpc_url: Url,
-
-    /// Ethereum wallet's secret (private) key.
-    #[arg(short, long, env = "SECRET_KEY", value_parser = parse_secret_key)]
-    secret_key: B256,
-
-    /// Timeout for waiting transactions to be confirmed, in seconds.
-    #[arg(short, long, env = "TX_TIMEOUT_SECS", default_value = "30")]
-    tx_timeout: Option<u64>,
+    pub command: Commands,
 
     /// Path to the .env file
     #[arg(short, long, default_value = "./.env")]
-    env: PathBuf,
+    pub env: PathBuf,
+
+    /// Enable debug-level logs
+    #[arg(short, long)]
+    pub debug: bool,
 }
 
-/// Main CLI entry point.
-pub async fn cli() -> Result<()> {
-    // default commands such as version and help exit at this point,
-    // so we can do the node setup after this line
-    let cli = Cli::parse();
-
-    // store cli-parsed options
-    let rpc_url = cli.rpc_url;
-    let secret_key = cli.secret_key;
-
-    // create node
-    let mut config = DriaOracleConfig::new(&secret_key, rpc_url)
-        .wrap_err("could not create oracle configuration")?;
-
-    // set transaction timeout if provided
-    if let Some(timeout_secs) = cli.tx_timeout {
-        config = config.with_tx_timeout(Duration::from_secs(timeout_secs));
+impl Cli {
+    pub fn read_secret_key() -> Result<B256> {
+        let key = env::var("SECRET_KEY")?;
+        parse_secret_key(&key)
     }
 
-    let node = DriaOracle::new(config).await?;
-    log::info!("{}", node);
-    log::info!("{}", node.addresses);
+    pub fn read_rpc_url() -> Result<Url> {
+        let url = env::var("RPC_URL")?;
+        parse_url(&url)
+    }
 
-    match cli.command {
+    pub fn read_tx_timeout() -> Result<u64> {
+        let timeout = env::var("TX_TIMEOUT_SECS").unwrap_or("30".to_string());
+        timeout.parse().map_err(Into::into)
+    }
+}
+
+/// Handles a given CLI command, using the provided node.
+pub async fn handle_command(command: Commands, node: crate::DriaOracle) -> Result<()> {
+    match command {
         Commands::Balance => node.display_balance().await?,
         Commands::Register { kinds } => {
             for kind in kinds {
