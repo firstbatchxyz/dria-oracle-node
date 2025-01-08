@@ -32,7 +32,7 @@ pub enum Commands {
     Claim,
     /// Serve the oracle node.
     Serve {
-        #[arg(help = "The oracle kinds to handle tasks as.", required = false, value_parser = parse_oracle_kind)]
+        #[arg(short, long = "kind", help = "The oracle kinds to handle tasks as, if omitted will default to all registered kinds.", value_parser = parse_oracle_kind)]
         kinds: Vec<OracleKind>,
         #[arg(short, long = "model", help = "The models to serve.", required = true, value_parser = parse_model)]
         models: Vec<Model>,
@@ -48,8 +48,8 @@ pub enum Commands {
             value_parser = parse_block_number_or_tag
         )]
         to: Option<BlockNumberOrTag>,
-        #[arg(help = "Task id.", required = true)]
-        task_id: U256,
+        #[arg(help = "Optional task id to serve specifically.", required = false)]
+        task_id: Option<U256>,
     },
     /// View tasks. fsdkhfk fsdkjfdks
     View {

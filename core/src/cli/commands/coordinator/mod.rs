@@ -12,7 +12,7 @@ mod view;
 
 impl DriaOracle {
     /// Starts the oracle node.
-    pub(in crate::cli) async fn start_oracle(
+    pub(in crate::cli) async fn serve(
         &self,
         from_block: Option<BlockNumberOrTag>,
         to_block: Option<BlockNumberOrTag>,
@@ -40,7 +40,7 @@ impl DriaOracle {
                     log::debug!("Cancellation signal received. Stopping...");
                     return Ok(());
                 }
-                result = self.process_tasks_within_range(from_block, to_block.unwrap_or(BlockNumberOrTag::Latest)) => {
+                result = self.process_tasks_within_range(from_block, to_block.clone().unwrap_or(BlockNumberOrTag::Latest)) => {
                     if let Err(e) = result {
                         log::error!("Could not handle previous tasks: {:?}", e);
                         log::warn!("Continuing anyways...");
@@ -49,6 +49,12 @@ impl DriaOracle {
             }
         }
 
+        if to_block.is_some() {
+            // if there was a `to_block` specified, we are done at this point
+            return Ok(());
+        }
+
+        // otherwise, we can continue with the event loop
         loop {
             // subscribe to new tasks
             log::info!("Subscribing to task events");

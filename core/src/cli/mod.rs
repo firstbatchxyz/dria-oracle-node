@@ -59,21 +59,23 @@ pub async fn handle_command(command: Commands, mut node: crate::DriaOracle) -> R
             let token = CancellationToken::new();
             node.prepare_oracle(kinds, models).await?;
 
-            // create a signal handler
-            let termination_token = token.clone();
-            let termination_handle = tokio::spawn(async move {
-                wait_for_termination(termination_token).await.unwrap();
-            });
+            if let Some(task_id) = task_id {
+                node.process_task_by_id(task_id).await?
+            } else {
+                // create a signal handler
+                let termination_token = token.clone();
+                let termination_handle = tokio::spawn(async move {
+                    wait_for_termination(termination_token).await.unwrap();
+                });
 
-            // launch node
-            node.start_oracle(from, to, token).await?;
+                // launch node
+                node.serve(from, to, token).await?;
 
-            // wait for handle
-            if let Err(e) = termination_handle.await {
-                log::error!("Error in termination handler: {}", e);
+                // wait for handle
+                if let Err(e) = termination_handle.await {
+                    log::error!("Error in termination handler: {}", e);
+                }
             }
-
-            node.process_task_by_id(task_id).await?
         }
         Commands::View { task_id, from, to } => {
             if let Some(task_id) = task_id {
