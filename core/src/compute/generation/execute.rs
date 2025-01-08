@@ -1,11 +1,12 @@
-use crate::compute::parse_downloadable;
-use crate::DriaOracle;
 use alloy::primitives::U256;
 use dkn_workflows::{Executor, MessageInput, Model, ProgramMemory};
 use eyre::{eyre, Context, Result};
 
 use super::request::GenerationRequest;
 use super::workflow::*;
+
+use crate::compute::parse_downloadable;
+use crate::DriaOracle;
 
 /// Executes a request using the given model, and optionally a node.
 /// Returns the raw string output.

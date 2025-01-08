@@ -1,14 +1,14 @@
-mod process;
-mod request;
-mod view;
-
-use std::time::Duration;
-
-use crate::DriaOracle;
 use alloy::eips::BlockNumberOrTag;
 use eyre::{Context, Result};
 use futures_util::StreamExt;
+use std::time::Duration;
 use tokio_util::sync::CancellationToken;
+
+use crate::DriaOracle;
+
+mod request;
+mod serve;
+mod view;
 
 impl DriaOracle {
     /// Starts the oracle node.

@@ -32,14 +32,10 @@ impl DriaOracle {
         let req = token.transferFrom(from, to, amount);
         let tx = req.send().await.map_err(contract_error_report)?;
 
-        log::info!("Hash: {:?}", tx.tx_hash());
-        let receipt = tx
-            .with_timeout(self.config.tx_timeout)
-            .get_receipt()
-            .await?;
-        Ok(receipt)
+        self.wait_for_tx(tx).await
     }
 
+    /// Approves the `spender` to spend `amount` tokens on behalf of the caller.
     pub async fn approve(&self, spender: Address, amount: U256) -> Result<TransactionReceipt> {
         let token = ERC20::new(self.addresses.token, &self.provider);
 
@@ -50,19 +46,15 @@ impl DriaOracle {
             .map_err(contract_error_report)
             .wrap_err("could not approve tokens")?;
 
-        log::info!("Hash: {:?}", tx.tx_hash());
-        let receipt = tx
-            .with_timeout(self.config.tx_timeout)
-            .get_receipt()
-            .await?;
-        Ok(receipt)
+        self.wait_for_tx(tx).await
     }
 
+    /// Returns the allowance of a given `spender` address to spend tokens on behalf of `owner` address.
     pub async fn allowance(&self, owner: Address, spender: Address) -> Result<TokenBalance> {
         let token = ERC20::new(self.addresses.token, &self.provider);
         let token_symbol = token.symbol().call().await?._0;
-
         let allowance = token.allowance(owner, spender).call().await?._0;
+
         Ok(TokenBalance::new(
             allowance,
             token_symbol,

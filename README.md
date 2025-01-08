@@ -103,11 +103,11 @@ dria-oracle unregister validator
 
 ### Launching the Node
 
-We launch our node using the `start` command, followed by models of our choice and the oracle type that we would like to serve.
+We launch our node using the `serve` command, followed by models of our choice and the oracle type that we would like to serve.
 If we provide no oracle types, it will default to the ones that we are registered to.
 
 ```sh
-dria-oracle start -m=gpt-4o-mini -m=llama3.1:latest
+dria-oracle serve -m=gpt-4o-mini -m=llama3.1:latest
 ```
 
 You can terminate the application from the terminal as usual (e.g. CTRL+C) to quit the node.
@@ -120,20 +120,20 @@ Following the same logic, the Oracle node can read task inputs from Arweave as w
 
 ### Viewing Tasks
 
-You can view the status of a task by its task id:
+You can `view` the details of a task by its task id:
 
 ```sh
 dria-oracle view <task-id>
 ```
 
-You can also view the task status updates between blocks with the `tasks` command.
-It accepts `--from` and `--to` arguments to indicate block numbers or tags, defaults from `earliest` block to `latest` block.
+You can also view the task status updates between blocks with the same command, by providing `from` and `to` blocks,
+which defaults from `earliest` block to `latest` block if none is provided.
 
 ```sh
-dria-oracle tasks                      # earliest to latest
-dria-oracle tasks --from=100           # 100      to latest
-dria-oracle tasks --to=100             # earliest to 100
-dria-oracle tasks --from=100 --to=200  # 100      to 200
+dria-oracle view                      # earliest to latest
+dria-oracle view --from=100           # 100      to latest
+dria-oracle view --to=100             # earliest to 100
+dria-oracle view --from=100 --to=200  # 100      to 200
 ```
 
 ### Balance & Rewards
@@ -167,22 +167,6 @@ It mainly takes an input argument, followed by multiple model arguments:
 ```sh
 dria-oracle request "What is 2+2?" gpt-4o-mini phi3:3.8b
 ```
-
-The `request` command takes the following options:
-
-- `--difficulty` for the proof-of-work difficulty for oracles that are responding to this request; the higher this is the more fees it will take to make the request.
-- `--num-gens` number of generations requested.
-- `--num-vals` number of validations required per request.
-
-> [!NOTE]
->
-> Making a request from the Oracle node is mainly for testing purposes, and you are not expected to use this command at all. Furthermore, it is only used to make plaintext requests, instead of larger ones via Arweave or more complex ones via Workflows.
-
-There are 3 types of requests:
-
-- **String**: simple text
-- **Chat**: an object of the form `{history_id: number, content: string}` which uses a previous task as history
-- **Workflow**: a stringified Workflow object
 
 ## Development
 

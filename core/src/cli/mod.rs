@@ -47,20 +47,10 @@ impl Cli {
 pub async fn handle_command(command: Commands, mut node: crate::DriaOracle) -> Result<()> {
     match command {
         Commands::Balance => node.display_balance().await?,
-        Commands::Register { kinds } => {
-            for kind in kinds {
-                node.register(kind).await?
-            }
-        }
-        Commands::Unregister { kinds } => {
-            for kind in kinds {
-                node.unregister(kind).await?;
-            }
-        }
-        Commands::Registrations => node.display_registrations().await?,
         Commands::Claim => node.claim_rewards().await?,
         Commands::Rewards => node.display_rewards().await?,
-        Commands::Start {
+        Commands::Serve {
+            task_id,
             kinds,
             models,
             from,
@@ -82,41 +72,41 @@ pub async fn handle_command(command: Commands, mut node: crate::DriaOracle) -> R
             if let Err(e) = termination_handle.await {
                 log::error!("Error in termination handler: {}", e);
             }
-        }
-        Commands::View { task_id } => node.view_task(task_id).await?,
-        Commands::Process {
-            task_id,
-            kinds,
-            models,
-        } => {
-            node.prepare_oracle(kinds, models).await?;
+
             node.process_task_by_id(task_id).await?
         }
-        Commands::Tasks { from, to } => {
-            node.view_task_events(
-                from.unwrap_or(BlockNumberOrTag::Earliest),
-                to.unwrap_or(BlockNumberOrTag::Latest),
-            )
-            .await?
+        Commands::View { task_id, from, to } => {
+            if let Some(task_id) = task_id {
+                node.view_task(task_id).await?
+            } else {
+                node.view_task_events(
+                    from.unwrap_or(BlockNumberOrTag::Earliest),
+                    to.unwrap_or(BlockNumberOrTag::Latest),
+                )
+                .await?
+            }
         }
+        Commands::Register { kinds } => {
+            for kind in kinds {
+                node.register(kind).await?
+            }
+        }
+        Commands::Unregister { kinds } => {
+            for kind in kinds {
+                node.unregister(kind).await?;
+            }
+        }
+        Commands::Registrations => node.display_registrations().await?,
         Commands::Request {
             input,
             models,
             difficulty,
             num_gens,
             num_vals,
+            protocol,
         } => {
-            const PROTOCOL: &str = concat!(env!("CARGO_PKG_NAME"), "/", env!("CARGO_PKG_VERSION"));
-
-            node.request_task(
-                &input,
-                models,
-                difficulty,
-                num_gens,
-                num_vals,
-                PROTOCOL.to_string(),
-            )
-            .await?
+            node.request_task(&input, models, difficulty, num_gens, num_vals, protocol)
+                .await?
         }
     };
 

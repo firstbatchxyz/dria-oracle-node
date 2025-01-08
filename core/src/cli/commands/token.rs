@@ -2,20 +2,22 @@ use crate::DriaOracle;
 use eyre::Result;
 
 impl DriaOracle {
-    /// Display token balances
+    /// Display token balances.
     pub(in crate::cli) async fn display_balance(&self) -> Result<()> {
         let eth_balance = self.get_native_balance(self.address()).await?;
         let token_balance = self.get_token_balance(self.address()).await?;
 
-        log::info!("Your balances:");
-        for balance in [eth_balance, token_balance].iter() {
-            log::info!("{}", balance);
-        }
+        log::info!(
+            "Your balances:\n{}",
+            [eth_balance, token_balance]
+                .map(|b| b.to_string())
+                .join("\n")
+        );
 
         Ok(())
     }
 
-    /// Show the amount of claimable rewards
+    /// Show the amount of claimable rewards.
     pub(in crate::cli) async fn display_rewards(&self) -> Result<()> {
         let allowance = self
             .allowance(self.addresses.coordinator, self.address())

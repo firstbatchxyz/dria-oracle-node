@@ -10,7 +10,8 @@ use alloy::hex::FromHex;
 use alloy::providers::fillers::{
     BlobGasFiller, ChainIdFiller, FillProvider, GasFiller, JoinFill, NonceFiller, WalletFiller,
 };
-use alloy::providers::WalletProvider;
+use alloy::providers::{PendingTransactionBuilder, WalletProvider};
+use alloy::rpc::types::TransactionReceipt;
 use alloy::{
     network::{Ethereum, EthereumWallet},
     primitives::Address,
@@ -162,6 +163,7 @@ impl DriaOracle {
         if model_config.models.is_empty() {
             return Err(eyre!("No models provided."))?;
         }
+
         let ollama_config = model_config.ollama.clone();
         model_config = model_config.with_ollama_config(
             ollama_config
@@ -254,6 +256,19 @@ impl DriaOracle {
     #[inline(always)]
     pub fn address(&self) -> Address {
         self.config.wallet.default_signer().address()
+    }
+
+    /// Waits for a transaction to be mined, returning the receipt.
+    async fn wait_for_tx(
+        &self,
+        tx: PendingTransactionBuilder<Http<Client>, Ethereum>,
+    ) -> Result<TransactionReceipt> {
+        log::info!("Waiting for tx: {:?}", tx.tx_hash());
+        let receipt = tx
+            .with_timeout(self.config.tx_timeout)
+            .get_receipt()
+            .await?;
+        Ok(receipt)
     }
 }
 

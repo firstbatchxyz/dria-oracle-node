@@ -1,7 +1,8 @@
-use crate::DriaOracle;
 use alloy::primitives::utils::format_ether;
 use dria_oracle_contracts::OracleKind;
 use eyre::Result;
+
+use crate::DriaOracle;
 
 impl DriaOracle {
     /// Registers the oracle node as an oracle for the given `kind`.

@@ -16,12 +16,7 @@ impl crate::DriaOracle {
             .map_err(contract_error_report)
             .wrap_err(eyre!("could not register"))?;
 
-        log::info!("Hash: {:?}", tx.tx_hash());
-        let receipt = tx
-            .with_timeout(self.config.tx_timeout)
-            .get_receipt()
-            .await?;
-        Ok(receipt)
+        self.wait_for_tx(tx).await
     }
 
     /// Unregister from the oracle registry.
@@ -35,12 +30,7 @@ impl crate::DriaOracle {
             .map_err(contract_error_report)
             .wrap_err("could not unregister")?;
 
-        log::info!("Hash: {:?}", tx.tx_hash());
-        let receipt = tx
-            .with_timeout(self.config.tx_timeout)
-            .get_receipt()
-            .await?;
-        Ok(receipt)
+        self.wait_for_tx(tx).await
     }
 
     pub async fn is_registered(&self, kind: OracleKind) -> Result<bool> {

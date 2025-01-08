@@ -39,12 +39,7 @@ impl DriaOracle {
             .map_err(contract_error_report)
             .wrap_err("could not request task")?;
 
-        log::info!("Hash: {:?}", tx.tx_hash());
-        let receipt = tx
-            .with_timeout(self.config.tx_timeout)
-            .get_receipt()
-            .await?;
-        Ok(receipt)
+        self.wait_for_tx(tx).await
     }
 
     /// Returns the best response to a given task request, as per their scores.
@@ -115,12 +110,7 @@ impl DriaOracle {
         let req = coordinator.validate(task_id, nonce, scores, metadata);
         let tx = req.send().await.map_err(contract_error_report)?;
 
-        log::info!("Hash: {:?}", tx.tx_hash());
-        let receipt = tx
-            .with_timeout(self.config.tx_timeout)
-            .get_receipt()
-            .await?;
-        Ok(receipt)
+        self.wait_for_tx(tx).await
     }
 
     /// Subscribes to events & processes tasks.

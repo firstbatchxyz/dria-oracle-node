@@ -51,7 +51,7 @@ impl crate::DriaOracle {
 
         log::info!("Responses:");
         if responses._0.is_empty() {
-            log::warn!("There are no responses yet.");
+            log::info!("There are no responses yet.");
         } else {
             for (idx, response) in responses._0.iter().enumerate() {
                 log::info!(
@@ -66,7 +66,7 @@ impl crate::DriaOracle {
 
         log::info!("Validations:");
         if validations._0.is_empty() {
-            log::warn!("There are no validations yet.");
+            log::info!("There are no validations yet.");
         } else {
             for (idx, validation) in validations._0.iter().enumerate() {
                 log::info!(
