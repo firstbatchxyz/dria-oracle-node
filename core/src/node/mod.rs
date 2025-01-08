@@ -1,7 +1,6 @@
 mod coordinator;
 mod registry;
 mod token;
-mod workflows;
 
 #[cfg(feature = "anvil")]
 mod anvil;
@@ -19,8 +18,10 @@ use alloy::{
     transports::http::{Client, Http},
 };
 use alloy_chains::Chain;
+use dkn_workflows::{DriaWorkflowsConfig, Model, ModelProvider};
 use dria_oracle_contracts::{
-    get_coordinator_address, ContractAddresses, OracleCoordinator, OracleRegistry, TokenBalance,
+    get_coordinator_address, ContractAddresses, OracleCoordinator, OracleKind, OracleRegistry,
+    TokenBalance,
 };
 use eyre::{eyre, Context, Result};
 use std::env;
@@ -46,9 +47,10 @@ pub struct DriaOracle {
     pub addresses: ContractAddresses,
     /// Underlying provider type.
     pub provider: DriaOracleProvider,
-    /// Workflows configurations.
-    /// This is only needed when the oracle is running to handle tasks.
-    pub workflows: Option<workflows::DriaOracleWorkflows>,
+    /// Kinds of this oracle, i.e. `generator`, `validator`.
+    pub kinds: Vec<OracleKind>,
+    /// Workflows config, defines the available models & services.
+    pub workflows: DriaWorkflowsConfig,
 }
 
 impl DriaOracle {
@@ -102,7 +104,8 @@ impl DriaOracle {
                 token: token_address,
             },
             provider,
-            workflows: None,
+            kinds: Vec::default(),
+            workflows: DriaWorkflowsConfig::default(),
         };
 
         node.check_contract_sizes().await?;
@@ -123,8 +126,70 @@ impl DriaOracle {
             provider,
             config: self.config.clone().with_wallet(wallet),
             addresses: self.addresses.clone(),
+            kinds: self.kinds.clone(),
             workflows: self.workflows.clone(),
         }
+    }
+
+    pub async fn prepare_oracle(
+        &mut self,
+        mut kinds: Vec<OracleKind>,
+        models: Vec<Model>,
+    ) -> Result<()> {
+        if kinds.is_empty() {
+            // if kinds are not provided, use the registrations as kinds
+            log::debug!("No kinds provided. Checking registrations.");
+            for kind in [OracleKind::Generator, OracleKind::Validator] {
+                if self.is_registered(kind).await? {
+                    kinds.push(kind);
+                }
+            }
+
+            if kinds.is_empty() {
+                return Err(eyre!("You are not registered as any type of oracle."))?;
+            }
+        } else {
+            // otherwise, make sure we are registered to required kinds
+            for kind in &kinds {
+                if !self.is_registered(*kind).await? {
+                    return Err(eyre!("You need to register as {} first.", kind))?;
+                }
+            }
+        }
+
+        // prepare model config & check services
+        let mut model_config = DriaWorkflowsConfig::new(models);
+        if model_config.models.is_empty() {
+            return Err(eyre!("No models provided."))?;
+        }
+        let ollama_config = model_config.ollama.clone();
+        model_config = model_config.with_ollama_config(
+            ollama_config
+                .with_min_tps(5.0)
+                .with_timeout(std::time::Duration::from_secs(150)),
+        );
+        model_config.check_services().await?;
+
+        // validator-specific checks here
+        if kinds.contains(&OracleKind::Validator) {
+            // make sure we have GPT4o model
+            if !model_config
+                .models
+                .contains(&(ModelProvider::OpenAI, Model::GPT4o))
+            {
+                return Err(eyre!("Validator must have GPT4o model."))?;
+            }
+
+            // make sure node is whitelisted
+            if !self.is_whitelisted(self.address()).await? {
+                return Err(eyre!("You are not whitelisted in the registry."))?;
+            }
+        }
+
+        self.workflows = model_config;
+        self.kinds = kinds;
+
+        Ok(())
     }
 
     /// Returns the native token balance of a given address.

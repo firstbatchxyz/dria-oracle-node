@@ -3,7 +3,6 @@ use alloy::{
     primitives::{FixedBytes, U256},
     rpc::types::TransactionReceipt,
 };
-use dkn_workflows::DriaWorkflowsConfig;
 use dria_oracle_contracts::{bytes32_to_string, bytes_to_string};
 use dria_oracle_storage::ArweaveStorage;
 use eyre::{Context, Result};
@@ -19,7 +18,6 @@ use super::request::GenerationRequest;
 /// 2. Then, we check if our models are compatible with the request. If not, we return an error.
 pub async fn handle_generation(
     node: &DriaOracle,
-    workflows: &DriaWorkflowsConfig,
     task_id: U256,
     protocol: FixedBytes<32>,
 ) -> Result<Option<TransactionReceipt>> {
@@ -44,7 +42,7 @@ pub async fn handle_generation(
     log::debug!("Choosing model to use");
     let models_string = bytes_to_string(&request.models)?;
     let models_vec = models_string.split(',').map(|s| s.to_string()).collect();
-    let (_, model) = workflows.get_any_matching_model(models_vec)?;
+    let (_, model) = node.workflows.get_any_matching_model(models_vec)?;
     log::debug!("Using model: {} from {}", model, models_string);
 
     // parse protocol string early, in case it cannot be parsed

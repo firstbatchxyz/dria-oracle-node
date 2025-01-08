@@ -30,7 +30,7 @@ futures-util = "0.3.30"
 async-trait = "0.1.81"
 bytes = "1.7.1"
 rand = "0.8.5"
-reqwest = "0.12.5"
+reqwest.workspace = true
 
 # b64, hex, serde
 base64 = "0.22.1"

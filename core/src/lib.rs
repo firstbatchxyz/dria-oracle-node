@@ -11,4 +11,4 @@ mod configurations;
 pub use configurations::DriaOracleConfig;
 
 mod compute;
-pub use compute::{handle_request, mine_nonce};
+pub use compute::{handle_generation, handle_request, handle_validation, mine_nonce};

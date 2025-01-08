@@ -6,11 +6,9 @@ impl crate::DriaOracle {
     /// Views the task events between two blocks, logs everything on screen.
     pub(in crate::cli) async fn view_task_events(
         &self,
-        from_block: impl Into<BlockNumberOrTag> + Clone,
-        to_block: impl Into<BlockNumberOrTag> + Clone,
+        from_block: BlockNumberOrTag,
+        to_block: BlockNumberOrTag,
     ) -> Result<()> {
-        let from_block: BlockNumberOrTag = from_block.clone().into();
-        let to_block: BlockNumberOrTag = to_block.clone().into();
         log::info!(
             "Viewing task ids & statuses between blocks: {} - {}",
             from_block
@@ -24,14 +22,14 @@ impl crate::DriaOracle {
         );
 
         let task_events = self.get_tasks_in_range(from_block, to_block).await?;
-
         for (event, log) in task_events {
             log::info!(
-                "Task {} changed from {} to {} at block {}",
+                "Task {} changed from {} to {} at block {}, tx: {}",
                 event.taskId,
                 TaskStatus::try_from(event.statusBefore).unwrap_or_default(),
                 TaskStatus::try_from(event.statusAfter).unwrap_or_default(),
-                log.block_number.unwrap_or_default()
+                log.block_number.unwrap_or_default(),
+                log.transaction_hash.unwrap_or_default()
             );
         }
 

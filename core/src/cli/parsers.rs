@@ -6,16 +6,19 @@ use reqwest::Url;
 use std::str::FromStr;
 
 /// `value_parser` to parse a `str` to `OracleKind`.
+#[inline]
 pub fn parse_model(value: &str) -> Result<Model> {
     Model::try_from(value.to_string()).map_err(|e| eyre!(e))
 }
 
 /// `value_parser` to parse a `str` to `Url`.
+#[inline]
 pub fn parse_url(value: &str) -> Result<Url> {
     Url::parse(value).map_err(Into::into)
 }
 
 /// `value_parser` to parse a hexadecimal `str` to 256-bit type `B256`.
+#[inline]
 pub fn parse_secret_key(value: &str) -> Result<B256> {
     B256::from_hex(value).map_err(Into::into)
 }
@@ -24,6 +27,7 @@ pub fn parse_secret_key(value: &str) -> Result<B256> {
 ///
 /// This could be done with `ValueEnum` as well, but we prefer this to not
 /// require `clap` in another crate for just that reason.
+#[inline]
 pub fn parse_oracle_kind(value: &str) -> Result<OracleKind> {
     match value {
         "generator" => Ok(OracleKind::Generator),
@@ -35,6 +39,7 @@ pub fn parse_oracle_kind(value: &str) -> Result<OracleKind> {
 /// `value parser` to parse a `str` to `BlockNumberOrTag`
 /// where if it can be parsed as `u64`, we call `BlockNumberOrTag::from_u64`
 /// otherwise we call `BlockNumberOrTag::from_str`.
+#[inline]
 pub fn parse_block_number_or_tag(value: &str) -> Result<BlockNumberOrTag> {
     match value.parse::<u64>() {
         // parse block no from its decimal representation
@@ -97,5 +102,24 @@ mod tests {
             block_number_or_tag,
             BlockNumberOrTag::from_str(block_hex_str).unwrap()
         );
+    }
+
+    #[test]
+    fn test_parse_oracle_kind() {
+        let kind_str = "generator";
+        let result = parse_oracle_kind(kind_str);
+        assert!(result.is_ok());
+        let kind = result.unwrap();
+        assert_eq!(kind, OracleKind::Generator);
+
+        let kind_str = "validator";
+        let result = parse_oracle_kind(kind_str);
+        assert!(result.is_ok());
+        let kind = result.unwrap();
+        assert_eq!(kind, OracleKind::Validator);
+
+        let kind_str = "invalid";
+        let result = parse_oracle_kind(kind_str);
+        assert!(result.is_err());
     }
 }

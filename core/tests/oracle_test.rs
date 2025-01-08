@@ -1,5 +1,5 @@
 use alloy::{eips::BlockNumberOrTag, primitives::utils::parse_ether};
-use dkn_workflows::{DriaWorkflowsConfig, Model};
+use dkn_workflows::Model;
 use dria_oracle::{handle_request, DriaOracle, DriaOracleConfig};
 use dria_oracle_contracts::{bytes_to_string, string_to_bytes, OracleKind, TaskStatus, WETH};
 use eyre::Result;
@@ -7,7 +7,6 @@ use eyre::Result;
 #[tokio::test]
 async fn test_oracle_string_input() -> Result<()> {
     dotenvy::dotenv().unwrap();
-
     let _ = env_logger::builder()
         .filter_level(log::LevelFilter::Off)
         .filter_module("dria_oracle", log::LevelFilter::Debug)
@@ -22,14 +21,13 @@ async fn test_oracle_string_input() -> Result<()> {
     let input = string_to_bytes("What is the result of 2 + 2?".to_string());
 
     // node setup
-    let workflows = DriaWorkflowsConfig::new(vec![Model::GPT4Turbo]);
     let config = DriaOracleConfig::new_from_env()?;
     let (node, _anvil) = DriaOracle::anvil_new(config).await?;
 
     // setup accounts
     let requester = node.connect(node.anvil_funded_wallet(None).await?);
-    let generator = node.connect(node.anvil_funded_wallet(None).await?);
-    let validator = node.connect(node.anvil_funded_wallet(None).await?);
+    let mut generator = node.connect(node.anvil_funded_wallet(None).await?);
+    let mut validator = node.connect(node.anvil_funded_wallet(None).await?);
 
     // buy some WETH for all people
     let amount = parse_ether("100").unwrap();
@@ -45,17 +43,22 @@ async fn test_oracle_string_input() -> Result<()> {
     }
 
     // whitelist validator with impersonation
-    log::info!("Whitelisting validator");
     node.anvil_whitelist_registry(validator.address()).await?;
     assert!(node.is_whitelisted(validator.address()).await?);
 
-    // register validator oracle
-    validator.register(OracleKind::Validator).await?;
-    assert!(validator.is_registered(OracleKind::Validator).await?);
-
-    // register generator oracle
+    // register & prepare generator oracle
     generator.register(OracleKind::Generator).await?;
+    generator
+        .prepare_oracle(vec![OracleKind::Generator], vec![Model::GPT4Turbo])
+        .await?;
     assert!(generator.is_registered(OracleKind::Generator).await?);
+
+    // register & prepare validator oracle
+    validator.register(OracleKind::Validator).await?;
+    validator
+        .prepare_oracle(vec![OracleKind::Validator], vec![Model::GPT4o])
+        .await?;
+    assert!(validator.is_registered(OracleKind::Validator).await?);
 
     // approve some tokens for the coordinator from requester
     requester
@@ -81,8 +84,6 @@ async fn test_oracle_string_input() -> Result<()> {
     assert_eq!(event.statusAfter, TaskStatus::PendingGeneration as u8);
     let generation_receipt = handle_request(
         &generator,
-        &[OracleKind::Generator],
-        &workflows,
         TaskStatus::PendingGeneration,
         event.taskId,
         event.protocol,
@@ -104,8 +105,6 @@ async fn test_oracle_string_input() -> Result<()> {
     assert_eq!(event.statusAfter, TaskStatus::PendingValidation as u8);
     let validation_receipt = handle_request(
         &validator,
-        &[OracleKind::Validator],
-        &workflows,
         TaskStatus::PendingValidation,
         event.taskId,
         event.protocol,

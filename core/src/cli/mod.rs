@@ -1,18 +1,16 @@
+// use alloy::eips::BlockNumberOrTag;
+use alloy::eips::BlockNumberOrTag;
+use eyre::Result;
+use std::{env, path::PathBuf};
+use tokio_util::sync::CancellationToken;
+
 mod commands;
 use commands::Commands;
 
 mod parsers;
 use parsers::*;
 
-use alloy::{eips::BlockNumberOrTag, primitives::B256};
-use clap::Parser;
-use dkn_workflows::DriaWorkflowsConfig;
-use eyre::Result;
-use reqwest::Url;
-use std::{env, path::PathBuf};
-use tokio_util::sync::CancellationToken;
-
-#[derive(Parser)]
+#[derive(clap::Parser)]
 #[command(version, about, long_about = None)]
 #[command(propagate_version = true)]
 pub struct Cli {
@@ -29,12 +27,12 @@ pub struct Cli {
 }
 
 impl Cli {
-    pub fn read_secret_key() -> Result<B256> {
+    pub fn read_secret_key() -> Result<alloy::primitives::B256> {
         let key = env::var("SECRET_KEY")?;
         parse_secret_key(&key)
     }
 
-    pub fn read_rpc_url() -> Result<Url> {
+    pub fn read_rpc_url() -> Result<reqwest::Url> {
         let url = env::var("RPC_URL")?;
         parse_url(&url)
     }
@@ -46,7 +44,7 @@ impl Cli {
 }
 
 /// Handles a given CLI command, using the provided node.
-pub async fn handle_command(command: Commands, node: crate::DriaOracle) -> Result<()> {
+pub async fn handle_command(command: Commands, mut node: crate::DriaOracle) -> Result<()> {
     match command {
         Commands::Balance => node.display_balance().await?,
         Commands::Register { kinds } => {
@@ -69,6 +67,7 @@ pub async fn handle_command(command: Commands, node: crate::DriaOracle) -> Resul
             to,
         } => {
             let token = CancellationToken::new();
+            node.prepare_oracle(kinds, models).await?;
 
             // create a signal handler
             let termination_token = token.clone();
@@ -77,13 +76,7 @@ pub async fn handle_command(command: Commands, node: crate::DriaOracle) -> Resul
             });
 
             // launch node
-            node.run_oracle(
-                kinds,
-                models,
-                from.unwrap_or(BlockNumberOrTag::Latest),
-                token,
-            )
-            .await?;
+            node.start_oracle(from, to, token).await?;
 
             // wait for handle
             if let Err(e) = termination_handle.await {
@@ -96,8 +89,8 @@ pub async fn handle_command(command: Commands, node: crate::DriaOracle) -> Resul
             kinds,
             models,
         } => {
-            node.process_task(&DriaWorkflowsConfig::new(models), &kinds, task_id)
-                .await?
+            node.prepare_oracle(kinds, models).await?;
+            node.process_task_by_id(task_id).await?
         }
         Commands::Tasks { from, to } => {
             node.view_task_events(
