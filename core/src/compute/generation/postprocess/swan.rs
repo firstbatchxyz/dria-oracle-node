@@ -32,24 +32,34 @@ impl PostProcess for SwanPurchasePostProcessor {
         // we will cast strings to Address here
         use alloy::primitives::Address;
 
-        // first, collect the buy lines
-        let mut collecting = false;
-        let mut shopping_list_lines = Vec::new();
-        for line in input.lines() {
-            if line.contains(self.start_marker) {
-                // if we see the shop_list start marker, we can start collecting lines
-                collecting = true;
-            } else if line.contains(self.end_marker) {
-                // if we see the buy list end marker, we can stop collecting lines
-                break;
-            } else if collecting {
-                // if we are collecting, this must be a buy line
-                shopping_list_lines.push(line);
-            }
-        }
+        // get region of interest, that is between <shop_list> and </shop_list>
+        // with the markers excluded
+        let roi = input
+            .find(self.start_marker)
+            .map(|start| start + self.start_marker.len())
+            .and_then(|start| {
+                input[start..]
+                    .find(self.end_marker)
+                    .map(|end| input[start..start + end].to_string())
+            })
+            .ok_or_else(|| {
+                eyre::eyre!("could not find {} ~ {}", self.start_marker, self.end_marker)
+            })?;
+
+        // collect the chosen addresses
+        let shopping_list: Vec<&str> = if let Ok(list) = serde_json::from_str(&roi) {
+            // (1) try parsing the addresses from the input
+            list
+        } else {
+            // (2) try splitting the input by lines and trimming all of them & removing empty lines
+            roi.lines()
+                .map(|line| line.trim())
+                .filter(|s| !s.is_empty())
+                .collect()
+        };
 
         // then, do post processing on them to cast them to `Address`
-        let addresses = shopping_list_lines
+        let addresses = shopping_list
             .into_iter()
             .filter_map(|line| match Address::from_str(line) {
                 Ok(address) => Some(address),
@@ -79,7 +89,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_swan_post_processor_encoding() {
+    fn test_swan_post_processor_encoding_custom_addresses() {
         const INPUT: &str = r#"
 some blabla here and there
 
@@ -118,14 +128,15 @@ some more blabla here
     }
 
     #[test]
-    fn test_swan_post_processor_encoding_2() {
+    fn test_swan_post_processor_encoding_random_addresses() {
         const INPUT: &str = r#"
 <shop_list>
 0x36f55f830D6E628a78Fcb70F73f9D005BaF88eE3
-0xAd75C9358799e830F0c23a4BB28dF4D2cCCc8846
-0x26F5B12b67D5F006826824A73F58b88D6bdAA74B
-0x671527de058BaD60C6151cA29d501C87439bCF62
-0x66FC9dC1De3db773891753CD257359A26e876305
+   0xAd75C9358799e830F0c23a4BB28dF4D2cCCc8846
+0x26F5B12b67D5F006826824A73F58b88D6bdAA74B   
+   0x671527de058BaD60C6151cA29d501C87439bCF62
+
+   0x66FC9dC1De3db773891753CD257359A26e876305
 </shop_list>
 "#;
 
@@ -140,7 +151,29 @@ some more blabla here
             address!("671527de058BaD60C6151cA29d501C87439bCF62"),
             address!("66FC9dC1De3db773891753CD257359A26e876305"),
         ];
-        assert_eq!(addresses, expected_addresses, "must have listed addresses");
+        assert_eq!(addresses, expected_addresses);
+    }
+
+    #[test]
+    fn test_swan_post_processor_encoding_json_addresses() {
+        // we are able to parse no matter how broken the JSON formatting is!
+        const INPUT: &str = r#"
+<shop_list>
+    ["0x36f55f830D6E628a78Fcb70F73f9D005BaF88eE3",
+    "0xAd75C9358799e830F0c23a4BB28dF4D2cCCc8846"
+    ]  
+</shop_list>
+"#;
+
+        let post_processor = SwanPurchasePostProcessor::new("<shop_list>", "</shop_list>");
+
+        let (output, _, _) = post_processor.post_process(INPUT.to_string()).unwrap();
+        let addresses = <Vec<Address>>::abi_decode(&output, true).unwrap();
+        let expected_addresses = vec![
+            address!("36f55f830D6E628a78Fcb70F73f9D005BaF88eE3"),
+            address!("Ad75C9358799e830F0c23a4BB28dF4D2cCCc8846"),
+        ];
+        assert_eq!(addresses, expected_addresses);
     }
 
     #[test]
@@ -156,11 +189,12 @@ im not even an address lol
 "#;
 
         let post_processor = SwanPurchasePostProcessor::new("<shop_list>", "</shop_list>");
-
-        let (output, _, _) = post_processor.post_process(INPUT.to_string()).unwrap();
-        let addresses = <Vec<Address>>::abi_decode(&output, true).unwrap();
-        let expected_addresses = vec![address!("26F5B12b67D5F006826824A73F58b88D6bdAA74B")];
-        assert_eq!(addresses, expected_addresses, "must have listed addresses");
+        let output = post_processor.post_process(INPUT.to_string()).unwrap().0;
+        assert_eq!(
+            <Vec<Address>>::abi_decode(&output, true).unwrap(),
+            vec![address!("26F5B12b67D5F006826824A73F58b88D6bdAA74B")],
+            "must have listed addresses"
+        );
     }
 
     #[tokio::test]
