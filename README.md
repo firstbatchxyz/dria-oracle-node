@@ -107,10 +107,44 @@ We launch our node using the `serve` command, followed by models of our choice a
 If we provide no oracle types, it will default to the ones that we are registered to.
 
 ```sh
-dria-oracle serve -m=gpt-4o-mini -m=llama3.1:latest
+# run as generator
+dria-oracle serve -m=gpt-4o-mini -m=llama3.1:latest generator
+
+# run as validator
+dria-oracle serve -m=gpt-4o validator
+
+# run as kinds that you are registered to
+dria-oracle serve -m=gpt-4o
 ```
 
-You can terminate the application from the terminal as usual (e.g. CTRL+C) to quit the node.
+We can start handling tasks from previous blocks until now, and then continue listening for more events:
+
+```sh
+# start from 100th block until now, and subscribe to new events
+dria-oracle serve -m=gpt-4o --from=100
+```
+
+> [!TIP]
+>
+> You can terminate the application from the terminal as usual (e.g. CTRL+C) to quit the node.
+
+Or, we can handle tasks between specific blocks only, the application will exit upon finishing blocks unlike before:
+
+```sh
+# handle tasks between blocks 100 and 500
+dria-oracle serve -m=gpt-4o --from=100 --to=500
+```
+
+Finally, we can handle an existing task specifically as well (if its unhandled for some reason):
+
+```sh
+# note that if task id is given, `from` and `to` will be ignored
+dria-oracle serve -m=gpt-4o --task-id <task>
+```
+
+> [!WARNING]
+>
+> Validators must use `gpt-4o` model.
 
 #### Using Arweave
 
@@ -123,7 +157,7 @@ Following the same logic, the Oracle node can read task inputs from Arweave as w
 You can `view` the details of a task by its task id:
 
 ```sh
-dria-oracle view <task-id>
+dria-oracle view --task-id <task>
 ```
 
 You can also view the task status updates between blocks with the same command, by providing `from` and `to` blocks,
