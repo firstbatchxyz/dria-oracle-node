@@ -1,0 +1,46 @@
+[package]
+name = "dria-oracle"
+description = "Dria Knowledge Network Oracle Node"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+
+[features]
+anvil = ["alloy/node-bindings"]
+
+[dependencies]
+# core
+alloy.workspace = true
+alloy-chains.workspace = true
+tokio.workspace = true
+tokio-util.workspace = true
+
+# workflows
+dkn-workflows = { git = "https://github.com/firstbatchxyz/dkn-compute-node" }
+
+# errors & logging & env
+env_logger = "0.11.5"
+eyre = "0.6.12"
+log = "0.4.22"
+dotenvy = "0.15.7"
+
+# utils
+futures-util = "0.3.30"
+async-trait = "0.1.81"
+bytes = "1.7.1"
+rand = "0.8.5"
+reqwest.workspace = true
+
+# b64, hex, serde
+base64 = "0.22.1"
+hex = "0.4.3"
+hex-literal = "0.4.1"
+serde = "1.0.204"
+serde_json = "1.0.122"
+
+# cli
+clap = { version = "4.5.13", features = ["derive", "env"] }
+
+dria-oracle-storage = { path = "../storage" }
+dria-oracle-contracts = { path = "../contracts" }

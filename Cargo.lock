@@ -1951,17 +1951,18 @@ checksum = "1aaf95b3e5c8f23aa320147307562d361db0ae0d51242340f558153b4eb2439b"
 
 [[package]]
 name = "dria-oracle"
-version = "0.2.2"
+version = "0.2.32"
 dependencies = [
  "alloy",
  "alloy-chains",
  "async-trait",
  "base64 0.22.1",
- "bundlr-sdk",
  "bytes 1.9.0",
  "clap",
  "dkn-workflows",
  "dotenvy",
+ "dria-oracle-contracts",
+ "dria-oracle-storage",
  "env_logger 0.11.5",
  "eyre",
  "futures-util",
@@ -1974,6 +1975,32 @@ dependencies = [
  "serde_json",
  "tokio 1.42.0",
  "tokio-util 0.7.13",
+]
+
+[[package]]
+name = "dria-oracle-contracts"
+version = "0.2.32"
+dependencies = [
+ "alloy",
+ "alloy-chains",
+ "eyre",
+]
+
+[[package]]
+name = "dria-oracle-storage"
+version = "0.2.32"
+dependencies = [
+ "alloy",
+ "async-trait",
+ "bundlr-sdk",
+ "dotenvy",
+ "env_logger 0.11.5",
+ "eyre",
+ "log",
+ "reqwest 0.12.9",
+ "serde",
+ "serde_json",
+ "tokio 1.42.0",
 ]
 
 [[package]]
