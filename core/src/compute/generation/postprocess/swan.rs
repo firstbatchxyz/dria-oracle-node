@@ -43,7 +43,12 @@ impl PostProcess for SwanPurchasePostProcessor {
                     .map(|end| input[start..start + end].to_string())
             })
             .ok_or_else(|| {
-                eyre::eyre!("could not find {} ~ {}", self.start_marker, self.end_marker)
+                eyre::eyre!(
+                    "could not find {} ~ {} in result: {}",
+                    input,
+                    self.start_marker,
+                    self.end_marker
+                )
             })?;
 
         // collect the chosen addresses

@@ -28,7 +28,7 @@ impl DriaOracle {
             Ok(None) => {
                 log::info!("Task {} ignored.", task_id)
             }
-            Err(e) => log::error!("Could not process task: {:?}", e),
+            Err(e) => log::error!("Could not process task {}: {:?}", task_id, e),
         }
 
         Ok(())
@@ -41,7 +41,7 @@ impl DriaOracle {
         };
 
         if let Err(err) = handle_request(self, status, event.taskId, event.protocol).await {
-            log::error!("Could not process task: {:?}", err);
+            log::error!("Could not process task {}: {:?}", event.taskId, err);
         }
     }
 

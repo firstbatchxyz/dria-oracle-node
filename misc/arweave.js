@@ -17,30 +17,34 @@
  * Can be piped to `pbcopy` on macOS to copy the output to clipboard.
  */
 
-// parse input
-let input = process.argv[2];
-if (!input) {
-  console.error("No input provided.");
-  return;
+async function main() {
+  // parse input
+  let input = process.argv[2];
+  if (!input) {
+    console.error("No input provided.");
+    return;
+  }
+
+  let arweaveTxId;
+  if (input.startsWith("0x")) {
+    // if it starts with 0x, we assume its all hex
+    arweaveTxId = JSON.parse(
+      Buffer.from(input.slice(2), "hex").toString()
+    ).arweave;
+  } else if (input.startsWith("{")) {
+    // if it starts with {, we assume its a JSON string
+    console.log("input", input);
+    arweaveTxId = JSON.parse(input).arweave;
+  } else {
+    // otherwise, we assume its a base64 txid
+    arweaveTxId = input;
+  }
+
+  // construct the URL
+  // download the actual response from Arweave
+  const url = `https://arweave.net/${arweaveTxId}`;
+  const res = await fetch(url);
+  console.log(await res.text());
 }
 
-let arweaveTxId;
-if (input.startsWith("0x")) {
-  // if it starts with 0x, we assume its all hex
-  arweaveTxId = JSON.parse(
-    Buffer.from(input.slice(2), "hex").toString()
-  ).arweave;
-} else if (input.startsWith("{")) {
-  // if it starts with {, we assume its a JSON string
-  console.log("input", input);
-  arweaveTxId = JSON.parse(input).arweave;
-} else {
-  // otherwise, we assume its a base64 txid
-  arweaveTxId = input;
-}
-
-// construct the URL
-// download the actual response from Arweave
-const url = `https://arweave.net/${arweaveTxId}`;
-const res = await fetch(url);
-console.log(await res.text());
+main().catch(console.error);
