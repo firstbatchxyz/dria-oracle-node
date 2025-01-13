@@ -34,7 +34,7 @@ pub enum Commands {
     Serve {
         #[arg(help = "The oracle kinds to handle tasks as, if omitted will default to all registered kinds.", value_parser = parse_oracle_kind)]
         kinds: Vec<OracleKind>,
-        #[arg(short, long = "model", help = "The models to serve.", required = true, value_parser = parse_model)]
+        #[arg(short, long = "model", help = "The model(s) to serve.", required = true, value_parser = parse_model)]
         models: Vec<Model>,
         #[arg(
             long,
@@ -49,6 +49,7 @@ pub enum Commands {
         )]
         to: Option<BlockNumberOrTag>,
         #[arg(
+            short,
             long,
             help = "Optional task id to serve specifically.",
             required = false
@@ -61,14 +62,14 @@ pub enum Commands {
         from: Option<BlockNumberOrTag>,
         #[arg(long, help = "Ending block number, defaults to 'latest'.", value_parser = parse_block_number_or_tag)]
         to: Option<BlockNumberOrTag>,
-        #[arg(long, help = "Task id to view.")]
+        #[arg(short, long, help = "Task id to view.")]
         task_id: Option<U256>,
     },
     /// Request a task.
     Request {
         #[arg(help = "The input to request a task with.", required = true)]
         input: String,
-        #[arg(help = "The models to accept.", required = true, value_parser=parse_model)]
+        #[arg(help = "The model(s) to accept.", required = true, value_parser=parse_model)]
         models: Vec<Model>,
         #[arg(long, help = "The difficulty of the task.", default_value_t = 2)]
         difficulty: u8,

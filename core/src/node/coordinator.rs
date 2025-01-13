@@ -4,7 +4,9 @@ use alloy::contract::EventPoller;
 use alloy::eips::BlockNumberOrTag;
 use alloy::primitives::aliases::U40;
 use alloy::primitives::{Bytes, U256};
+use alloy::providers::Provider;
 use alloy::rpc::types::{Log, TransactionReceipt};
+use alloy::transports::RpcError;
 use dria_oracle_contracts::LLMOracleTask::{TaskResponse, TaskValidation};
 use dria_oracle_contracts::{contract_error_report, string_to_bytes32};
 use eyre::{eyre, Context, Result};
@@ -88,14 +90,55 @@ impl DriaOracle {
         let coordinator = OracleCoordinator::new(self.addresses.coordinator, &self.provider);
 
         let req = coordinator.respond(task_id, nonce, response, metadata);
-        let tx = req.send().await.map_err(contract_error_report)?;
 
-        log::info!("Hash: {:?}", tx.tx_hash());
-        let receipt = tx
-            .with_timeout(self.config.tx_timeout)
-            .get_receipt()
-            .await?;
-        Ok(receipt)
+        // get current gas price (in Wei)
+        let initial_gas_price = self.provider.get_gas_price().await?;
+
+        let nonce = self.provider.get_transaction_count(self.address()).await?;
+        log::warn!("Nonce: {:?}", nonce);
+
+        // try and send tx, with increasing gas prices for few attempts
+        for (attempt_no, increase_percentage) in [10, 12, 24, 36].iter().enumerate() {
+            // set gas price
+            let gas_price = initial_gas_price + (initial_gas_price / 100) * increase_percentage;
+
+            // send tx with gas price
+            match req
+                .clone()
+                .gas_price(gas_price) // TODO: very low gas price to get an error deliberately
+                .send()
+                .await
+            {
+                // if all is well, we wait for the tx to be mined for a bit
+                Ok(tx) => {
+                    log::info!("Hash: {:?}", tx.tx_hash());
+                    let receipt = tx
+                        .with_timeout(self.config.tx_timeout)
+                        .get_receipt()
+                        .await?;
+                    return Ok(receipt);
+                }
+                Err(alloy::contract::Error::TransportError(RpcError::ErrorResp(err))) => {
+                    // if we get an RPC error; specifically, if the tx is underpriced, we try again with higher gas
+                    if err.code == -32603 {
+                        log::warn!(
+                            "Tx underpriced with gas {} Wei (attempt {})",
+                            gas_price,
+                            attempt_no + 1,
+                        );
+                        continue;
+                    } else {
+                        // otherwise let it be handled by the error report
+                        return Err(contract_error_report(
+                            alloy::contract::Error::TransportError(RpcError::ErrorResp(err)),
+                        ));
+                    }
+                }
+                Err(err) => return Err(contract_error_report(err)),
+            };
+        }
+
+        Err(eyre!("Failed to send transaction."))
     }
 
     pub async fn respond_validation(
@@ -114,6 +157,7 @@ impl DriaOracle {
     }
 
     /// Subscribes to events & processes tasks.
+    #[inline]
     pub async fn subscribe_to_tasks(
         &self,
     ) -> Result<EventPoller<DriaOracleProviderTransport, StatusUpdate>> {
@@ -163,6 +207,7 @@ impl DriaOracle {
     }
 
     /// Returns the next task id.
+    #[inline]
     pub async fn get_next_task_id(&self) -> Result<U256> {
         let coordinator = OracleCoordinator::new(self.addresses.coordinator, &self.provider);
 
