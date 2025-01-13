@@ -98,7 +98,7 @@ impl DriaOracle {
         log::warn!("Nonce: {:?}", nonce);
 
         // try and send tx, with increasing gas prices for few attempts
-        for (attempt_no, increase_percentage) in [10, 12, 24, 36].iter().enumerate() {
+        for (attempt_no, increase_percentage) in [0, 12, 24, 36].iter().enumerate() {
             // set gas price
             let gas_price = initial_gas_price + (initial_gas_price / 100) * increase_percentage;
 
@@ -120,9 +120,10 @@ impl DriaOracle {
                 }
                 Err(alloy::contract::Error::TransportError(RpcError::ErrorResp(err))) => {
                     // if we get an RPC error; specifically, if the tx is underpriced, we try again with higher gas
-                    if err.code == -32603 {
+                    if err.message.contains("underpriced") {
                         log::warn!(
-                            "Tx underpriced with gas {} Wei (attempt {})",
+                            "{} with gas {} in attempt {}",
+                            err.message,
                             gas_price,
                             attempt_no + 1,
                         );
@@ -134,6 +135,7 @@ impl DriaOracle {
                         ));
                     }
                 }
+                // if we get any other error, we report it
                 Err(err) => return Err(contract_error_report(err)),
             };
         }

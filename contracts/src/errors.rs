@@ -30,39 +30,24 @@ pub fn contract_error_report(error: Error) -> ErrReport {
             // here we try to parse the error w.r.t provided contract interfaces
             // or return a default one in the end if it was not parsed successfully
             if let Some(payload) = error.as_error_resp() {
+                // an ERC20 error
                 if let Some(erc_20_error) = payload.as_decoded_error::<ERC20Errors>(false) {
                     return erc_20_error.into();
-                } else if let Some(registry_error) =
+                } else
+                // an OracleRegistry error
+                if let Some(registry_error) =
                     payload.as_decoded_error::<OracleRegistryErrors>(false)
                 {
                     return registry_error.into();
-                } else if let Some(coordinator_error) =
+                } else
+                // an OracleCoordinator error
+                if let Some(coordinator_error) =
                     payload.as_decoded_error::<OracleCoordinatorErrors>(false)
                 {
                     return coordinator_error.into();
-                } else if payload.code == -32603 {
-                    // code: -32603 indicates that tx is underpriced, and should be retried with a higher gas
-                    // can happen for normal txs or replacement tx underpriced
-                    return eyre!("Transaction underpriced: {}", payload.message);
                 } else {
-                    return eyre!("Unhandled contract error: {:#?}", error);
+                    return eyre!("Unhandled error response: {:#?}", error);
                 }
-
-                // TODO: the code above looks much better than this one
-                // payload
-                //     .as_decoded_error(false)
-                //     .map(ERC20Errors::into)
-                //     .or_else(|| {
-                //         payload
-                //             .as_decoded_error(false)
-                //             .map(OracleRegistryErrors::into)
-                //     })
-                //     .or_else(|| {
-                //         payload
-                //             .as_decoded_error(false)
-                //             .map(OracleCoordinatorErrors::into)
-                //     })
-                //     .unwrap_or(eyre!("Unhandled contract error: {:#?}", error))
             } else {
                 eyre!("Unknown transport error: {:#?}", error)
             }
