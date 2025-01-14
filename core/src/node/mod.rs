@@ -6,12 +6,13 @@ mod token;
 mod anvil;
 
 use super::DriaOracleConfig;
+use alloy::contract::CallBuilder;
 use alloy::hex::FromHex;
 use alloy::providers::fillers::{
     BlobGasFiller, ChainIdFiller, FillProvider, GasFiller, JoinFill, NonceFiller, WalletFiller,
 };
 use alloy::providers::{PendingTransactionBuilder, WalletProvider};
-use alloy::rpc::types::TransactionReceipt;
+use alloy::transports::RpcError;
 use alloy::{
     network::{Ethereum, EthereumWallet},
     primitives::Address,
@@ -21,8 +22,8 @@ use alloy::{
 use alloy_chains::Chain;
 use dkn_workflows::{DriaWorkflowsConfig, Model, ModelProvider};
 use dria_oracle_contracts::{
-    get_coordinator_address, ContractAddresses, OracleCoordinator, OracleKind, OracleRegistry,
-    TokenBalance,
+    contract_error_report, get_coordinator_address, ContractAddresses, OracleCoordinator,
+    OracleKind, OracleRegistry, TokenBalance,
 };
 use eyre::{eyre, Context, Result};
 use std::env;
@@ -259,16 +260,86 @@ impl DriaOracle {
     }
 
     /// Waits for a transaction to be mined, returning the receipt.
-    async fn wait_for_tx(
+    #[inline]
+    async fn wait_for_tx<T, N>(
         &self,
-        tx: PendingTransactionBuilder<Http<Client>, Ethereum>,
-    ) -> Result<TransactionReceipt> {
+        tx: PendingTransactionBuilder<T, N>,
+    ) -> Result<N::ReceiptResponse>
+    where
+        T: alloy::transports::Transport + Clone,
+        N: alloy::network::Network,
+    {
         log::info!("Waiting for tx: {:?}", tx.tx_hash());
         let receipt = tx
             .with_timeout(self.config.tx_timeout)
             .get_receipt()
             .await?;
         Ok(receipt)
+    }
+
+    /// Given a request, retries sending it with increasing gas prices to avoid
+    /// the "tx underpriced" errors.
+    #[inline]
+    async fn send_with_gas_hikes<T, P, D, N>(
+        &self,
+        req: CallBuilder<T, P, D, N>,
+    ) -> Result<PendingTransactionBuilder<T, N>>
+    where
+        T: alloy::transports::Transport + Clone,
+        P: alloy::providers::Provider<T, N> + Clone,
+        D: alloy::contract::CallDecoder + Clone,
+        N: alloy::network::Network,
+    {
+        // gas price hikes to try in increasing order, first is 0 to simply use the
+        // initial gas fee for the first attempt
+        const GAS_PRICE_HIKES: [u128; 4] = [0, 12, 24, 36];
+
+        // try and send tx, with increasing gas prices for few attempts
+        let initial_gas_price = self.provider.get_gas_price().await?;
+        for (attempt_no, increase_percentage) in GAS_PRICE_HIKES.iter().enumerate() {
+            // set gas price
+            let gas_price = initial_gas_price + (initial_gas_price / 100) * increase_percentage;
+
+            // try to send tx with gas price
+            match req
+                .clone()
+                .gas_price(gas_price) // TODO: very low gas price to get an error deliberately
+                .send()
+                .await
+            {
+                // if all is well, we can return the tx
+                Ok(tx) => {
+                    return Ok(tx);
+                }
+                // if we get an RPC error; specifically, if the tx is underpriced, we try again with higher gas
+                Err(alloy::contract::Error::TransportError(RpcError::ErrorResp(err))) => {
+                    // TODO: kind of a code-smell, can we do better check here?
+                    if err.message.contains("underpriced") {
+                        log::warn!(
+                            "{} with gas {} in attempt {}",
+                            err.message,
+                            gas_price,
+                            attempt_no + 1,
+                        );
+
+                        // wait just a little bit
+                        tokio::time::sleep(std::time::Duration::from_millis(300)).await;
+
+                        continue;
+                    } else {
+                        // otherwise let it be handled by the error report
+                        return Err(contract_error_report(
+                            alloy::contract::Error::TransportError(RpcError::ErrorResp(err)),
+                        ));
+                    }
+                }
+                // if we get any other error, we report it
+                Err(err) => return Err(contract_error_report(err)),
+            };
+        }
+
+        // all attempts failed
+        Err(eyre!("Failed to send transaction."))
     }
 }
 

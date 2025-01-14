@@ -18,13 +18,7 @@ impl DriaOracle {
 
         let status = TaskStatus::try_from(request.status)?;
         match handle_request(self, status, task_id, request.protocol).await {
-            Ok(Some(receipt)) => {
-                log::info!(
-                    "Task {} processed successfully. (tx: {})",
-                    task_id,
-                    receipt.transaction_hash
-                )
-            }
+            Ok(Some(_receipt)) => {}
             Ok(None) => {
                 log::info!("Task {} ignored.", task_id)
             }

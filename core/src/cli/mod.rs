@@ -38,7 +38,7 @@ impl Cli {
     }
 
     pub fn read_tx_timeout() -> Result<u64> {
-        let timeout = env::var("TX_TIMEOUT_SECS").unwrap_or("30".to_string());
+        let timeout = env::var("TX_TIMEOUT_SECS").unwrap_or("100".to_string());
         timeout.parse().map_err(Into::into)
     }
 }

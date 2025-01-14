@@ -20,7 +20,7 @@ impl DriaOracle {
         }
 
         // calculate the required approval for registration
-        let stake = self.registry_stake_amount(kind).await?;
+        let stake = self.get_registry_stake_amount(kind).await?;
         let allowance = self
             .allowance(self.address(), self.addresses.registry)
             .await?;

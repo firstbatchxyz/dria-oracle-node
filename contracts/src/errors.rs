@@ -30,20 +30,24 @@ pub fn contract_error_report(error: Error) -> ErrReport {
             // here we try to parse the error w.r.t provided contract interfaces
             // or return a default one in the end if it was not parsed successfully
             if let Some(payload) = error.as_error_resp() {
-                payload
-                    .as_decoded_error(false)
-                    .map(ERC20Errors::into)
-                    .or_else(|| {
-                        payload
-                            .as_decoded_error(false)
-                            .map(OracleRegistryErrors::into)
-                    })
-                    .or_else(|| {
-                        payload
-                            .as_decoded_error(false)
-                            .map(OracleCoordinatorErrors::into)
-                    })
-                    .unwrap_or(eyre!("Unhandled contract error: {:#?}", error))
+                // an ERC20 error
+                if let Some(erc_20_error) = payload.as_decoded_error::<ERC20Errors>(false) {
+                    return erc_20_error.into();
+                } else
+                // an OracleRegistry error
+                if let Some(registry_error) =
+                    payload.as_decoded_error::<OracleRegistryErrors>(false)
+                {
+                    return registry_error.into();
+                } else
+                // an OracleCoordinator error
+                if let Some(coordinator_error) =
+                    payload.as_decoded_error::<OracleCoordinatorErrors>(false)
+                {
+                    return coordinator_error.into();
+                } else {
+                    return eyre!("Unhandled error response: {:#?}", error);
+                }
             } else {
                 eyre!("Unknown transport error: {:#?}", error)
             }
@@ -103,13 +107,13 @@ impl From<OracleRegistryErrors> for ErrReport {
             }
             // generic
             OracleRegistryErrors::FailedCall(_) => {
-                eyre!("Failed call",)
+                eyre!("Failed call")
             }
             OracleRegistryErrors::ERC1967InvalidImplementation(e) => {
                 eyre!("Invalid implementation: {}", e.implementation)
             }
             OracleRegistryErrors::UUPSUnauthorizedCallContext(_) => {
-                eyre!("Unauthorized UUPS call context",)
+                eyre!("Unauthorized UUPS call context")
             }
             OracleRegistryErrors::UUPSUnsupportedProxiableUUID(e) => {
                 eyre!("Unsupported UUPS proxiable UUID: {}", e.slot)
@@ -124,7 +128,7 @@ impl From<OracleRegistryErrors> for ErrReport {
                 eyre!("Address {} is empty", e.target)
             }
             OracleRegistryErrors::NotInitializing(_) => {
-                eyre!("Not initializing",)
+                eyre!("Not initializing")
             }
         }
     }
@@ -170,13 +174,13 @@ impl From<OracleCoordinatorErrors> for ErrReport {
             }
             // generic
             OracleCoordinatorErrors::FailedInnerCall(_) => {
-                eyre!("Failed inner call",)
+                eyre!("Failed inner call")
             }
             OracleCoordinatorErrors::ERC1967InvalidImplementation(e) => {
                 eyre!("Invalid implementation: {}", e.implementation)
             }
             OracleCoordinatorErrors::UUPSUnauthorizedCallContext(_) => {
-                eyre!("Unauthorized UUPS call context",)
+                eyre!("Unauthorized UUPS call context")
             }
             OracleCoordinatorErrors::UUPSUnsupportedProxiableUUID(e) => {
                 eyre!("Unsupported UUPS proxiable UUID: {}", e.slot)
@@ -191,7 +195,7 @@ impl From<OracleCoordinatorErrors> for ErrReport {
                 eyre!("Address {} is empty", e.target)
             }
             OracleCoordinatorErrors::NotInitializing(_) => {
-                eyre!("Not initializing",)
+                eyre!("Not initializing")
             }
         }
     }

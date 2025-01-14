@@ -5,9 +5,9 @@ use alloy::eips::BlockNumberOrTag;
 use alloy::primitives::aliases::U40;
 use alloy::primitives::{Bytes, U256};
 use alloy::rpc::types::{Log, TransactionReceipt};
+use dria_oracle_contracts::string_to_bytes32;
 use dria_oracle_contracts::LLMOracleTask::{TaskResponse, TaskValidation};
-use dria_oracle_contracts::{contract_error_report, string_to_bytes32};
-use eyre::{eyre, Context, Result};
+use eyre::{eyre, Result};
 
 use dria_oracle_contracts::OracleCoordinator::{
     self, getFeeReturn, getResponsesReturn, getValidationsReturn, requestsReturn,
@@ -32,13 +32,9 @@ impl DriaOracle {
             numGenerations: U40::from(num_gens),
             numValidations: U40::from(num_vals),
         };
-        let req = coordinator.request(string_to_bytes32(protocol)?, input, models, parameters);
-        let tx = req
-            .send()
-            .await
-            .map_err(contract_error_report)
-            .wrap_err("could not request task")?;
 
+        let req = coordinator.request(string_to_bytes32(protocol)?, input, models, parameters);
+        let tx = self.send_with_gas_hikes(req).await?;
         self.wait_for_tx(tx).await
     }
 
@@ -78,6 +74,7 @@ impl DriaOracle {
         Ok(responses._0)
     }
 
+    /// Responds to a generation request with the response, metadata, and a valid nonce.
     pub async fn respond_generation(
         &self,
         task_id: U256,
@@ -88,16 +85,12 @@ impl DriaOracle {
         let coordinator = OracleCoordinator::new(self.addresses.coordinator, &self.provider);
 
         let req = coordinator.respond(task_id, nonce, response, metadata);
-        let tx = req.send().await.map_err(contract_error_report)?;
-
-        log::info!("Hash: {:?}", tx.tx_hash());
-        let receipt = tx
-            .with_timeout(self.config.tx_timeout)
-            .get_receipt()
-            .await?;
-        Ok(receipt)
+        let tx = self.send_with_gas_hikes(req).await?;
+        self.wait_for_tx(tx).await
     }
 
+    /// Responds to a validation request with the score, metadata, and a valid nonce.
+    #[inline]
     pub async fn respond_validation(
         &self,
         task_id: U256,
@@ -108,12 +101,12 @@ impl DriaOracle {
         let coordinator = OracleCoordinator::new(self.addresses.coordinator, &self.provider);
 
         let req = coordinator.validate(task_id, nonce, scores, metadata);
-        let tx = req.send().await.map_err(contract_error_report)?;
-
+        let tx = self.send_with_gas_hikes(req).await?;
         self.wait_for_tx(tx).await
     }
 
     /// Subscribes to events & processes tasks.
+    #[inline]
     pub async fn subscribe_to_tasks(
         &self,
     ) -> Result<EventPoller<DriaOracleProviderTransport, StatusUpdate>> {
@@ -163,6 +156,7 @@ impl DriaOracle {
     }
 
     /// Returns the next task id.
+    #[inline]
     pub async fn get_next_task_id(&self) -> Result<U256> {
         let coordinator = OracleCoordinator::new(self.addresses.coordinator, &self.provider);
 

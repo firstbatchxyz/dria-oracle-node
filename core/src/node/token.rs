@@ -1,8 +1,8 @@
 use super::DriaOracle;
 use alloy::primitives::{Address, U256};
 use alloy::rpc::types::TransactionReceipt;
-use dria_oracle_contracts::{contract_error_report, TokenBalance, ERC20};
-use eyre::{Context, Result};
+use dria_oracle_contracts::{TokenBalance, ERC20};
+use eyre::Result;
 
 impl DriaOracle {
     /// Returns the token balance of a given address.
@@ -30,8 +30,7 @@ impl DriaOracle {
         let token = ERC20::new(self.addresses.token, &self.provider);
 
         let req = token.transferFrom(from, to, amount);
-        let tx = req.send().await.map_err(contract_error_report)?;
-
+        let tx = self.send_with_gas_hikes(req).await?;
         self.wait_for_tx(tx).await
     }
 
@@ -40,12 +39,7 @@ impl DriaOracle {
         let token = ERC20::new(self.addresses.token, &self.provider);
 
         let req = token.approve(spender, amount);
-        let tx = req
-            .send()
-            .await
-            .map_err(contract_error_report)
-            .wrap_err("could not approve tokens")?;
-
+        let tx = self.send_with_gas_hikes(req).await?;
         self.wait_for_tx(tx).await
     }
 
