@@ -301,12 +301,7 @@ impl DriaOracle {
             let gas_price = initial_gas_price + (initial_gas_price / 100) * increase_percentage;
 
             // try to send tx with gas price
-            match req
-                .clone()
-                .gas_price(gas_price) // TODO: very low gas price to get an error deliberately
-                .send()
-                .await
-            {
+            match req.clone().gas_price(gas_price).send().await {
                 // if all is well, we can return the tx
                 Ok(tx) => {
                     return Ok(tx);
@@ -339,7 +334,7 @@ impl DriaOracle {
         }
 
         // all attempts failed
-        Err(eyre!("Failed to send transaction."))
+        Err(eyre!("Failed all attempts send tx due to underpriced gas."))
     }
 }
 
