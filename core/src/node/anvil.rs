@@ -57,6 +57,7 @@ impl DriaOracle {
             .map_err(contract_error_report)
             .wrap_err("could not add to whitelist")?;
 
+        // TODO: use common command wait_for_tx
         log::info!("Hash: {:?}", tx.tx_hash());
         let receipt = tx
             .with_timeout(self.config.tx_timeout)

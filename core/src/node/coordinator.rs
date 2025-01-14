@@ -4,12 +4,10 @@ use alloy::contract::EventPoller;
 use alloy::eips::BlockNumberOrTag;
 use alloy::primitives::aliases::U40;
 use alloy::primitives::{Bytes, U256};
-use alloy::providers::Provider;
 use alloy::rpc::types::{Log, TransactionReceipt};
-use alloy::transports::RpcError;
+use dria_oracle_contracts::string_to_bytes32;
 use dria_oracle_contracts::LLMOracleTask::{TaskResponse, TaskValidation};
-use dria_oracle_contracts::{contract_error_report, string_to_bytes32};
-use eyre::{eyre, Context, Result};
+use eyre::{eyre, Result};
 
 use dria_oracle_contracts::OracleCoordinator::{
     self, getFeeReturn, getResponsesReturn, getValidationsReturn, requestsReturn,
@@ -34,13 +32,9 @@ impl DriaOracle {
             numGenerations: U40::from(num_gens),
             numValidations: U40::from(num_vals),
         };
-        let req = coordinator.request(string_to_bytes32(protocol)?, input, models, parameters);
-        let tx = req
-            .send()
-            .await
-            .map_err(contract_error_report)
-            .wrap_err("could not request task")?;
 
+        let req = coordinator.request(string_to_bytes32(protocol)?, input, models, parameters);
+        let tx = self.send_with_gas_hikes(req).await?;
         self.wait_for_tx(tx).await
     }
 
@@ -80,6 +74,7 @@ impl DriaOracle {
         Ok(responses._0)
     }
 
+    /// Responds to a generation request with the response, metadata, and a valid nonce.
     pub async fn respond_generation(
         &self,
         task_id: U256,
@@ -90,59 +85,12 @@ impl DriaOracle {
         let coordinator = OracleCoordinator::new(self.addresses.coordinator, &self.provider);
 
         let req = coordinator.respond(task_id, nonce, response, metadata);
-
-        // get current gas price (in Wei)
-        let initial_gas_price = self.provider.get_gas_price().await?;
-
-        let nonce = self.provider.get_transaction_count(self.address()).await?;
-        log::warn!("Nonce: {:?}", nonce);
-
-        // try and send tx, with increasing gas prices for few attempts
-        for (attempt_no, increase_percentage) in [0, 12, 24, 36].iter().enumerate() {
-            // set gas price
-            let gas_price = initial_gas_price + (initial_gas_price / 100) * increase_percentage;
-
-            // send tx with gas price
-            match req
-                .clone()
-                .gas_price(gas_price) // TODO: very low gas price to get an error deliberately
-                .send()
-                .await
-            {
-                // if all is well, we wait for the tx to be mined for a bit
-                Ok(tx) => {
-                    log::info!("Hash: {:?}", tx.tx_hash());
-                    let receipt = tx
-                        .with_timeout(self.config.tx_timeout)
-                        .get_receipt()
-                        .await?;
-                    return Ok(receipt);
-                }
-                Err(alloy::contract::Error::TransportError(RpcError::ErrorResp(err))) => {
-                    // if we get an RPC error; specifically, if the tx is underpriced, we try again with higher gas
-                    if err.message.contains("underpriced") {
-                        log::warn!(
-                            "{} with gas {} in attempt {}",
-                            err.message,
-                            gas_price,
-                            attempt_no + 1,
-                        );
-                        continue;
-                    } else {
-                        // otherwise let it be handled by the error report
-                        return Err(contract_error_report(
-                            alloy::contract::Error::TransportError(RpcError::ErrorResp(err)),
-                        ));
-                    }
-                }
-                // if we get any other error, we report it
-                Err(err) => return Err(contract_error_report(err)),
-            };
-        }
-
-        Err(eyre!("Failed to send transaction."))
+        let tx = self.send_with_gas_hikes(req).await?;
+        self.wait_for_tx(tx).await
     }
 
+    /// Responds to a validation request with the score, metadata, and a valid nonce.
+    #[inline]
     pub async fn respond_validation(
         &self,
         task_id: U256,
@@ -153,8 +101,7 @@ impl DriaOracle {
         let coordinator = OracleCoordinator::new(self.addresses.coordinator, &self.provider);
 
         let req = coordinator.validate(task_id, nonce, scores, metadata);
-        let tx = req.send().await.map_err(contract_error_report)?;
-
+        let tx = self.send_with_gas_hikes(req).await?;
         self.wait_for_tx(tx).await
     }
 
