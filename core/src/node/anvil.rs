@@ -3,32 +3,24 @@
 //! This module is only available when the `anvil` feature is enabled,
 //! which is only expected to happen in tests.
 
-use super::{DriaOracle, DriaOracleConfig};
+use super::DriaOracle;
 
-use alloy::network::EthereumWallet;
-use alloy::node_bindings::{Anvil, AnvilInstance};
+use alloy::network::{Ethereum, EthereumWallet};
 use alloy::primitives::Address;
 use alloy::primitives::{utils::parse_ether, U256};
 use alloy::providers::ext::AnvilApi;
-use alloy::rpc::types::TransactionReceipt;
+use alloy::providers::{PendingTransactionBuilder, Provider, ProviderBuilder};
+use alloy::rpc::types::{TransactionReceipt, TransactionRequest};
 use alloy::signers::local::PrivateKeySigner;
-use dria_oracle_contracts::{contract_error_report, OracleRegistry};
-use eyre::{Context, Result};
+use alloy::transports::http::Http;
+use dria_oracle_contracts::OracleRegistry;
+use eyre::Result;
+use reqwest::Client;
 
 impl DriaOracle {
+    pub const ANVIL_PORT: u16 = 8545;
     /// Default ETH funding amount for generated wallets.
-    const ANVIL_FUND_ETHER: &'static str = "10000";
-
-    /// Creates a new Anvil instance that forks the chain at the configured RPC URL.
-    ///
-    /// Return the node instance and the Anvil instance.
-    /// Note that when Anvil instance is dropped, you will lose the forked chain.
-    pub async fn anvil_new(config: DriaOracleConfig) -> Result<(Self, AnvilInstance)> {
-        let anvil = Anvil::new().fork(config.rpc_url.to_string()).try_spawn()?;
-        let node = Self::new(config.with_rpc_url(anvil.endpoint_url())).await?;
-
-        Ok((node, anvil))
-    }
+    pub const ANVIL_FUND_ETHER: &'static str = "10000";
 
     /// Generates a random wallet, funded with the given `fund` amount.
     ///
@@ -46,29 +38,37 @@ impl DriaOracle {
     /// Whitelists a given address, impersonates the owner in doing so.
     pub async fn anvil_whitelist_registry(&self, address: Address) -> Result<TransactionReceipt> {
         let registry = OracleRegistry::new(self.addresses.registry, &self.provider);
-
         let owner = registry.owner().call().await?._0;
-        registry.provider().anvil_impersonate_account(owner).await?;
 
-        let req = registry.addToWhitelist(vec![address]).from(owner);
-        let tx = req
-            .send()
-            .await
-            .map_err(contract_error_report)
-            .wrap_err("could not add to whitelist")?;
-
-        // TODO: use common command wait_for_tx
-        log::info!("Hash: {:?}", tx.tx_hash());
-        let receipt = tx
-            .with_timeout(self.config.tx_timeout)
-            .get_receipt()
+        let tx = self
+            .anvil_impersonated_tx(
+                registry
+                    .addToWhitelist(vec![address])
+                    .into_transaction_request(),
+                owner,
+            )
             .await?;
-
-        registry
-            .provider()
-            .anvil_stop_impersonating_account(owner)
-            .await?;
+        let receipt = self.wait_for_tx(tx).await?;
 
         Ok(receipt)
+    }
+
+    /// Assumes that an Anvil instance is running already at the given port.
+    ///
+    /// We use this due to the issue: https://github.com/alloy-rs/alloy/issues/1918
+    #[inline]
+    pub async fn anvil_impersonated_tx(
+        &self,
+        tx: TransactionRequest,
+        from: Address,
+    ) -> Result<PendingTransactionBuilder<Http<Client>, Ethereum>> {
+        let anvil = ProviderBuilder::new()
+            .on_http(format!("http://localhost:{}", Self::ANVIL_PORT).parse()?);
+
+        anvil.anvil_impersonate_account(from).await?;
+        let pending_tx = anvil.send_transaction(tx.from(from)).await?;
+        anvil.anvil_stop_impersonating_account(from).await?;
+
+        Ok(pending_tx)
     }
 }

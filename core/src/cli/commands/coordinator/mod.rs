@@ -40,7 +40,7 @@ impl DriaOracle {
                     log::debug!("Cancellation signal received. Stopping...");
                     return Ok(());
                 }
-                result = self.process_tasks_within_range(from_block, to_block.clone().unwrap_or(BlockNumberOrTag::Latest)) => {
+                result = self.process_tasks_within_range(from_block, to_block.unwrap_or(BlockNumberOrTag::Latest)) => {
                     if let Err(e) = result {
                         log::error!("Could not handle previous tasks: {:?}", e);
                         log::warn!("Continuing anyways...");

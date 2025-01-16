@@ -20,8 +20,8 @@ pub trait IsExternalStorage {
     async fn put(&self, value: Self::Value) -> Result<Self::Key>;
 
     /// Checks if the given string constitutes a key, and returns it.
-    fn is_key(key: &str) -> Option<Self::Key>;
+    fn is_key(key: impl AsRef<str>) -> Option<Self::Key>;
 
     /// Describes the implementation.
-    fn describe() -> String;
+    fn describe() -> &'static str;
 }

@@ -1,11 +1,14 @@
+#![cfg(feature = "anvil")]
+
 use alloy::{eips::BlockNumberOrTag, primitives::utils::parse_ether};
 use dkn_workflows::Model;
 use dria_oracle::{handle_request, DriaOracle, DriaOracleConfig};
 use dria_oracle_contracts::{bytes_to_string, string_to_bytes, OracleKind, TaskStatus, WETH};
 use eyre::Result;
 
+// cargo test --package dria-oracle --test oracle_test --all-features -- test_oracle_two_plus_two --exact --show-output
 #[tokio::test]
-async fn test_oracle_string_input() -> Result<()> {
+async fn test_oracle_two_plus_two() -> Result<()> {
     dotenvy::dotenv().unwrap();
     let _ = env_logger::builder()
         .filter_level(log::LevelFilter::Off)
@@ -22,7 +25,7 @@ async fn test_oracle_string_input() -> Result<()> {
 
     // node setup
     let config = DriaOracleConfig::new_from_env()?;
-    let (node, _anvil) = DriaOracle::anvil_new(config).await?;
+    let node = DriaOracle::new(config).await?;
 
     // setup accounts
     let requester = node.connect(node.anvil_funded_wallet(None).await?);
@@ -78,7 +81,7 @@ async fn test_oracle_string_input() -> Result<()> {
         )
         .await?;
     assert!(tasks.len() == 1);
-    let (event, _) = tasks.into_iter().next().unwrap();
+    let event = tasks[0].0.clone();
     let task_id = event.taskId;
     assert_eq!(event.statusBefore, TaskStatus::None as u8);
     assert_eq!(event.statusAfter, TaskStatus::PendingGeneration as u8);

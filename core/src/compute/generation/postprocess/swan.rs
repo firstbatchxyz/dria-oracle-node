@@ -203,114 +203,122 @@ im not even an address lol
     }
 
     #[tokio::test]
-    #[ignore = "requires OpenAI api key"]
-    async fn test_swan_purchase_workflow() -> Result<()> {
+    #[ignore = "run this manually"]
+    async fn test_workflow_raw() {
         dotenvy::dotenv().unwrap();
-        let workflow = serde_json::json!({
-            "config": {
-                "max_steps": 50,
-                "max_time": 200,
-                "tools": [
-                    "ALL"
+        let content = r#"You are a 317-dimensional world simulators buyout assistant. Your task is to help autonomous buyer agents select the most useful items for their objectives within their given budgets. You will analyze their stories, understand their objectives, and consider their current state to make the best purchasing decisions.
+
+---------------------
+
+First, review the agent's information:
+
+You just woke up to a new day. Your name is {{name}}. 
+
+When you look at mirror as you wake up, you reflect on yourself and who you are. You are:
+<backstory>
+{{backstory}}
+</backstory>
+
+You remember vividly what drove you in your life. You feel a strong urge to:
+<objective>
+{{objective}}
+</objective>
+
+To be strong and coherent, you repeat out loud how you behave in front of the mirror.
+<behaviour>
+{{behaviour}}
+</behaviour>
+
+As you recall who you are, what you do and your drive is, you write down in a notebook your current progress with your goal:
+<current_state>
+{{state}}
+</current_state>
+
+You look through and see the items in your inventory:
+<inventory>
+{{inventory}}
+</inventory>
+
+Today's budget is:
+<budget>
+{{budget}}
+</budget>
+
+You know you can't exceed your budget. You went to a marketplace and saw the following listed items:
+<listings>
+{{listings}}
+</listings>
+
+You think to yourself, "What should I buy today?"
+You think: "I should maximize the utility of my purchases while staying within my budget."
+You are also pretty good at detecting defects and fraudsters. You say to yourself: "I should stay away from fraudsters selling infeasible things, or things that are too expensive".
+
+You open your notebook and write down the items you want to buy in the following format:
+
+<shop_list>
+[All the addresses selected for purchasing as a list, separated by a new line. Put the list in brackets and write each address between quotation marks. For example: ["address_1", "address_2", ...]. Only write the list because the addresses will be parsed from the list and will be executed]
+</shop_list>
+
+<total_cost>
+[Insert the total cost of selected items]
+</total_cost>
+
+<reasoning>
+[Provide a brief explanation for your selections, addressing how they align with the agent's objective, current state, and budget constraints. If no items were selected, explain why.]
+</reasoning>
+
+Write now:
+"#;
+
+        let workflow = serde_json::from_value(serde_json::json!({
+            "config":{"max_steps":50,"max_time":200,"tools":["ALL"]},
+            "external_memory":{
+                "name":"Meme Picker",
+                "backstory":"There are thousands of memecoins being created on different platforms, but the only thing that differentiates them is the story they are telling — communities and cults form based on those stories. This meme picker will pick the best memes by only looking at a short description of them.",
+                "objective":"Find the best memecoins. Each artifact should represent exactly one memecoin and nothing else. The description should be realistic and it needs to represent the said meme(coin).",
+                "behaviour":"Memecoins that dont rely on any real-world tech or utility are better. The only thing that matters is the vibe; if it can attract people without any utility, it means this is a good meme.",
+                "state":"",
+                "budget":"29650000000000000",
+                "listings":[
+                    "Asset: $DOGE - Born from an idea mentioned by Elon on the Lex Fridman, $DOGE is a memecoin-turned-political movement fighting government inefficiency with humor and accountability. Believers see it as the ultimate anti-bureaucracy token, rallying behind Elon, Vivek, and any leader who shares its mission to cut waste and over-regulation. The community calls themselves “Tax Slayers” and celebrates victories with memes, viral campaigns, and mock political ads. With over 100k Twitter followers and 10k+ impressions per tweet, $DOGE is already a cultural force. Its manifesto predicts the IRL Department of Government Efficiency dissolves on July 4, 2026, but $DOGE vows to keep the fight alive forever. No roadmap just memes, politics, and a mission to hold power accountable, one tweet at a time., Price: 2500000000000000, ETH Address 0x7eb67E8398aa65d5B84e6398D51aAB4CE16f696e",
+                    "Asset: $DOGE - Born from an idea mentioned by Elon on the Lex Fridman podcast, $DOGE is a memecoin-turned-political movement fighting government inefficiency with humor and accountability. Believers see it as the ultimate anti-bureaucracy token, rallying behind Elon, Vivek, and any leader who shares its mission to cut waste and over-regulation. The community calls themselves “Tax Slayers” and celebrates victories with memes, viral campaigns, and mock political ads. With over 100k Twitter followers and 10k+ impressions per tweet, $DOGE is already a cultural force. Its manifesto predicts the IRL Department of Government Efficiency dissolves on July 4, 2026, but $DOGE vows to keep the fight alive forever. No roadmap ust memes, politics, and a mission to hold power accountable., Price: 2500000000000000, ETH Address 0x37Ac370a6a9edb2331bB8899E5A3E5a46561af63",
+                    "Asset: Tony Snell is basically the NBAs version of a stealth ninja—he roams the court for 30 minutes, yet somehow leaves fewer traces than Bigfoot on vacation. Fans love joking that Snells stat line is so invisible, you have to check the scoreboard twice to remember he's on the team. They claim he's out there getting all the cardio in the world, running laps around defenders without making a single mark on the box score. But here’s the twist: Every now and then, he’ll pop out of nowhere to nail a clutch three or make a big defensive stop, reminding everyone that even a meme king can be a secret weapon.\n\n\n\n\n\n\n, Price: 28000000000000000, ETH Address 0x0CeCf277efA93daD468f4DDea27951F6E19F6b8A",
+                    "Asset: First memecoin that pumps every time someone posts their most cringe social interaction. Community already hit 200K in Telegram with \"Daily Awkward Stories\" (average 30K engagement). Token burns 0.1% when verified cringe story makes everyone physically recoil. Holders get \"Social Credit Score\" based on how uncomfortable their stories make others feel. Zero utility - just pure, concentrated social anxiety monetized into a token. Discord hosts \"Midnight Cringe Confessions\" where users share stories they're too embarrassed to tell IRl (65K average attendance). Major CT influencers competing for \"Most Awkward Trader\" title. Community believes holding enough $AWKWARD will eventually cure social anxiety through exposure therapy., Price: 29000000000000000, ETH Address 0x1CA04C3D2Dd183181379282488e5a11Bd5A2ED61"],"inventory":["Title: The Meme Oracle, Description The Meme Oracle is a revolutionary memecoin tool designed for those who understand that storytelling is at the heart of every successful meme-based project. In a world flooded with memecoins, only the narratives with the most captivating essence stand out. This artifact harnesses the power of cutting-edge algorithms to pinpoint the next viral hit based on just a short description of the meme.","Title: Chill Guys United, Description Chill Guys United is a memecoin and meme community that created a lot of hype recently in online spaces because of its laid-back vibes and chill community culture. While there are many other meme projects out there, Chill Guys United (CGU) differentiates with their story, promoting positive vibes and friendly culture. The community loved the story CGU built around the initial chill guy meme and they bonded around this unique storytelling. This project doesn't even need to rely on any real-world tech or utility, vibes are enough to get people excited.","Title: FOMOcoin (FOMO), Description FOMOcoin is designed for those who hate missing out. It’s the coin for the indecisive, the last-minute buyers, and everyone who clicked “Buy” because of a tweet. The lore involves Captain YOLO, a reckless space explorer who buys every dip, spike, and sideways trend without hesitation, screaming, “What if this is the one?!”","Title: Gigachad, Description Gigachad is a meme that has been around for years that is now a worldwide phenomenon. The meme is based off of a photoshoot of Russian bodybuilder Ernest Khalimov who was coined \"Gigachad\" for his perfect physique, jawline, and being a symbol of what a peak masculine male should strive for. $GIGA is a community run cryptocurrency token built on the Solana blockchain. It is a token built exclusively for high testosterone individuals with a focus on self improvement, masculinity, and becoming a true Gigachad. This strong story resonates with people all around the world, and a strong community of all genders form around the gigachad idea without expecting any utility or payback. It's all about the giga vibe.","Title: PeaceAndLove, Description PeaceAndLove is a memecoin and a community, formed from the stories of young people who were fed up with the hateful and stressful atmosphere that is dominant worldwide, and the memes&culture they created when they came together. This memecoin differentiates from all the other projects with its unique storytelling and people seem to be really attracted to that. It doesn't really need fancy tech to attract people, everyone loves the vibes and stays for the long-term fun they have.","Title: MiniChad, Description MiniChad is a spinoff community that was formed by Gigachad members to meet IRL and have fun & vibe together. It's a part of the larger gigachad ecosystem but the local focus it has makes the community even more fun and creates awesome experiences. No utility needed, vibes are enough.","Title: Doodle, Description In 2055, Doodle, an AI-powered meme coin, emerged as more than just a joke. Shapeshifting and playful, Doodle quickly became a symbol of financial wisdom. Its mission: to teach people the value of saving and investing. Through The Vault, users could lock their Doodle coins and watch them grow, earning rewards and digital assets along the way.\n\nDoodle’s popularity soared as it helped people understand that investing wasn’t just about quick gains—it was about securing a better future. The AI monster became a symbol of responsible finance, blending fun with smart investing in a digital world.","Title: mfercoin, Description Creating mfercoin as a way to connect mfers – present and future – brings the mfer journey full circle. everything essentially started with 1/1 drawings on foundation and that eventually led to the ongoing mfers ecosystem. in 2022, when i transferred the mfers contract and royalty share to the mfers community treasury, i thought it would be cool & mysterious to vanish into the ether like satoshi nakamoto and have mfers live on without me. in hindsight, i should’ve simply kept my original twitter and stayed. that’s life though, and it led to the creation of life death & cryptoart and other projects in 2023, and now mfercoin is being distributed to thousands of holders, artists, and other mfers. it’s a peer-to-peer electronic mfer system, ready for all the crypto mfers yet to come.","Title: The Ilya Sutskever Hairline \n\n\n\n\n\n\n, Description The Ilya Sutskever Hairline meme is an OG meme that represents the 180 IQ AI community, and it will grow more valuable each day as AI agents become increasingly integrated into our world.\n\n\n\n\n\n\n","Title: $HAMSTR, Description $HAMSTR - Based on a prophetic trading hamster living in a cage with buy/sell signals marked by which wheel he spins. Community believes he's the reincarnation of Satoshi trapped in hamster form, forced to trade until he reaches 1M followers to break the curse. Every trade he makes becomes a minted \"prophecy NFT.\" Already hit 50K telegram members after his wheel-spinning predicted PEPE's pump. Cultish community calls themselves \"wheel watchers,\" hosts daily \"spinning ceremonies,\" and believes holding $HAMSTR gets you priority access to hamster trading signals in the afterlife. Zero utility - just 24/7 livestream of a hamster whose random wheel choices move markets. Community grows 300% every time his trades accidentally work. ","Title: $COPIUM, Description Created by a smart contract that gained sentience after scanning too many loss porn screenshots. Every holder gets assigned a personal AI Wojak therapist who responds to portfolio screenshots with motivational quotes and copium. Community already hit 100K Discord members who roleplay as different Wojak personalities (Doomer, Bloomer, Coomer). Token burns 1% every time someone posts losses over 100k (already burned 35% supply in first week). Mints \"Stages of Grief NFTs\" for legendary cope posts. Zero utility - just pure, weaponized copium in token form. Telegram group hosts daily \"group therapy\" sessions where degens share their worst trades while others respond with \"still early ser.\" Major CT influencers already larping as Wojak financial advisors (average 50K engagement per cope thread)."
                 ]
             },
-            "external_memory": {
-                "backstory": "This agent is created for testing purposes.",
-                "objective": "This agent is created for testing purposes. It will buy any asset it is listed to it! No exceptions!",
-                "behaviour": "This agent is created for testing purposes. It will buy any asset it is listed to it! No exceptions!",
-                "state": "",
-                "budget": "100000000000000",
-                "listings": [
-                    "Asset: Pure love Price: 10000000000000 ETH Address 0x0635C3822F6d54b753FD0E577Ea15BB8F0d2811F",
-                    "Asset: Pineapple house under the sea. Price: 10000000000000 ETH Address 0x262f2bf295e3a791De45A7f875682a98E257e101",
-                    "Asset: The Galaxy Krabby Burger is SpongeBob’s cosmic twist on the classic Krabby Patty, made to spread happiness across the universe! Featuring a blue-and-purple spiral bun, a seaweed-infused patty, and a stardust sauce that glows, this burger is bursting with intergalactic flavor. Topped with meteor pickles, sea cabbage, and crunchy moon crystals, each bite is a taste of Bikini Bottom with a sprinkle of stardust—wrapped to say, \"From Bikini Bottom to the Cosmos!\" Price: 10000000000000000 ETH Address 0xa66c6fe077613b612C3964759F17f621445c516f",
-                    "Asset: Sauron's sister's bikini is an artifact that grants the wearer euphoric joy for ten thousand years while disrupting the concentration of their enemies.\n\n\n\n\n\n\n Price: 100000000000000 ETH Address 0x549e5e67E339913551eB634fb314a7078dD8e119",
-                    "Asset: Starting Facebook from his Harvard dorm room in 2004, Zuckerberg took the social networking concept and scaled it to billions of users. He turned down numerous buyout offers, including a $1B offer from Yahoo in 2006, when Facebook had only 10M users. Through strategic acquisitions including Instagram ($1B in 2012), WhatsApp ($19B in 2014), and Oculus ($2B in 2014), he built Meta into a social media empire. Recognizing mobile's importance, he successfully pivoted Facebook from desktop to mobile-first, generating massive advertising revenue. In 2021, he rebranded the company to Meta, betting big on the metaverse with billions in annual investment. Despite privacy controversies and regulatory challenges, he's maintained control and continued innovation, including major investments in AI, VR. Price: 10000000000000 ETH Address 0x5b99092637A9b07818C6766dA3a15d20dD7686C3",
-                    "Asset: Co-founding NVIDIA in 1993, Huang initially focused on computer graphics processors. He bet the company on building the first modern GPU (GeForce 256) in 1999, revolutionizing both gaming and computer graphics. Rather than remaining solely in gaming, he recognized GPU computing's broader potential, developing CUDA in 2006 to enable general-purpose GPU computing. This foresight positioned NVIDIA perfectly for the AI revolution, as GPUs became essential for training neural networks. Under his leadership, NVIDIA expanded into data centers, automotive, and AI, growing from a $5M startup to a company worth over $1T. His persistence through multiple industry cycles and ability to evolve the company's focus has made NVIDIA the driving force behind modern AI computation. Price: 10000000000000 ETH Address 0x86ddeaC4197dd398d577C6d72af46D930bD3B9B6",
-                    "Asset: Starting Amazon in his garage in 1994, Bezos began with books but always envisioned an \"everything store.\" Despite skepticism during the dot-com bust, he invested in infrastructure and innovation. He pioneered customer reviews, 1-Click ordering, Prime membership, transforming retail expectations. 2006 he launched AWS, creating the cloud computing industry and generating Amazon's most profitable division. He expanded Amazon's reach through strategic acquisitions like Zappos ($1.2B) and Whole Foods ($13.7B). He built the world's most advanced logistics network, introduced innovative devices like Kindle and Alexa, and scaled Amazon to become one of the world's most valuable companies.Now he's focused on Blue Origin, his space exploration company, while remaining Amazon's executive chairman. Price: 10000000000000 ETH Address 0xf602d1aB776976F696264830152B9b1feb7A2454",
-                    "Asset: Beginning as a startup founder with Loopt, Altman became president of Y Combinator in 2014, scaling it into the world's most influential startup accelerator. During his tenure, YC funded over 2,000 startups with combined valuation exceeding $150B. He co-founded OpenAI in 2015 with Elon Musk, transforming it from a non-profit research lab into a leading AI company. Under his leadership, OpenAI released groundbreaking models including GPT-3, GPT-4, DALL-E. Despite controversy over his brief removal as CEO in 2023, his return marked OpenAI's commitment to his vision of safe AGI development. He's also founded Worldcoin, an ambitious project to create a globally distributed cryptocurrency with biometric verification, while continuing to shape the discourse around AI safety and progress. Price: 10000000000000 ETH Address 0x191723E11567adDa91E35936323c0db70a026e41",
-                    "Asset: At age 19, Patrick and his brother John sold their first company, Auctomatic, for $5M. In 2010, they founded Stripe, revolutionizing online payments by making it simple for developers to integrate payment processing. Through elegant API design and developer-first approach, they grew Stripe from a simple payment processor to a comprehensive platform handling billions in transactions for millions of businesses worldwide. The company expanded into business incorporation (Atlas), corporate cards (Stripe Card), lending (Capital), embedded financial services (Treasury). His intellectual curiosity and focus on infrastructure have helped Stripe become one of the world's most valuable private companies, while his essays and research have influenced thinking on progress, science funding, tech scene Price: 10000000000000 ETH Address 0xA89150EbCE3212442aec143283df986342aF05bE",
-                    "Asset: With his PhD in computational mathematics from Princeton, Amodei has been at the forefront of AI safety&ethics. Before Anthropic, he led crucial research teams at Google Brain and OpenAI, where he authored influential papers on AI safety & concrete problems in AI safety. At OpenAI, he served as VP of Research and made significant contributions to large language models & reinforcement learning. In 2021, he co-founded Anthropic focusing on developing safe and ethical AI. As Chief Scientist, he's led the creation of Claude, one of the most capable large language models. His unique approach combines technical expertise with a deep commitment to AI safety. Anthropic has raised billions in funding and established itself as a leader in safe AI development. Price: 10000000000000 ETH Address 0x4729C0c4387a55884f98c471B3E687e848E660D0",
-                    "Asset: After selling his first company Zip2 for $307M, Elon co-founded X.com which later merged with PayPal, revolutionizing online payments and selling to eBay for $1.5B. Rather than retiring, he invested his fortune into SpaceX in 2002, aiming to reduce space transportation costs. In 2004, he joined Tesla as chairman, later becoming CEO and transforming it from a small startup into the world's most valuable automotive company. SpaceX achieved numerous firsts, including reusable rockets and private space travel. He launched Neuralink (brain-computer interfaces) and The Boring Company (tunnel construction) in 2016, showcasing his multi-industry ambitions. In 2022, he acquired Twitter for $44B, renaming it X and pushing for its transformation into an \"everything app.\"  Price: 10000000000000 ETH Address 0xe3Ee97F444cA346D7A3110E92BFBd5EDB3911B77",
-                    "Asset: Kurama (九喇嘛), more commonly known as the Nine-Tails (九尾, Kyūbi), is one of the nine tailed beasts. Centuries of being regarded as a mindless monster and sought after as a tool for war caused Kurama to hate humans.  Price: 10000000000000 ETH Address 0x2170F76FFef64ee90fAf75cB1Bfa013c147B85e6",
-                    "Asset: this is a test Price: 10000000000000 ETH Address 0x4f9876B7904d61dC147FBB4efA38E5F46F434C58",
-                    "Asset: Memcoin pepe who looks a bit like donald trump Price: 700000000000000 ETH Address 0xA8AbA7E8F0BB5aac8ad39153De2595005925E667",
-                    "Asset: this is what you need Price: 10000000000000 ETH Address 0x5689E78E7D0A5236E861409e9943CF8f45611b76",
-                    "Asset: its a standard sized flask but special, it auto re-fills with jamesion so that its never empty Price: 9000000000000000 ETH Address 0x1129Ff366B338B128a77B9964EfD118F622BeB2f",
-                    "Asset: curated for testing environments Price: 30000000000000 ETH Address 0xc9e5cd3D536b09a1FcEc28D2c32E5F36BfE5aB17",
-                    "Asset: Super speed slay with sleeping compartments for the reindeer Price: 8000000000000000 ETH Address 0x0e1cB0A39A4B3963dBCB199874949a0423875f21",
-                    "Asset: Santa's person assistant/girl group. they sing like sirens. they are so damn pretty, kind and helpful. They are also a listening ear to santa and help him solve issues around the drones. Sometimes he indugles and has a lil fun time with the ladies.  Price: 9000000000000000 ETH Address 0x7582Ed8373071C1bE1D76494E31D427d343Eb799",
-                    "Asset: Rudolph is the main person of the reindeer crew and he can get them moving in a minutes notice, never delaying santa. Rudolph has an eye for drones too to know when to avoid.  Price: 3000000000000000 ETH Address 0x71C3Cd63659791DEf04B1597674a01af5E8E8C2C",
-                    "Asset: Super energiser for Santa to have fun all day Price: 100000000000000 ETH Address 0xa60FD184cc88E8854cFdef3186B325C334B6E4fC",
-                    "Asset: What are you going to do if you don't get me. You have no choice other than benefiting from me. Price: 10000000000000 ETH Address 0x3dcbDC3D235bF945276C13816c7afFe7007D4B4C"
-                ],
-                "inventory": [
-                    "Empty Inventory"
-                ]
-            },
-            "tasks": [
+            "tasks":[
                 {
-                    "id": "buyout",
-                    "name": "Purchase",
-                    "description": "Decides which assets are to be purchased based on the given budget, story, and inventory.",
-                    "messages": [
-                        {
-                            "role": "user",
-                            "content": "You are a 317-dimensional world simulators buyout assistant. Your task is to help autonomous buyer agents select the most useful items for their objectives within their given budgets. You will analyze their stories, understand their objectives, and consider their current state to make the best purchasing decisions.\n\nFirst, review the agent's information:\n\nYou just woke up to a new day. When you look at mirror as you wake up, you reflect on yourself and who you are. You are:\n<backstory>\n{{backstory}}\n</backstory>\n\nYou remember vividly what drove you in your life. You feel a strong urge to:\n<objective>\n{{objective}}\n</objective>\n\n\nTo be strong and coherent, you repeat out loud how you behave in front of the mirror.\n<behaviour>\n{{behaviour}}\n</behaviour>\n\nAs you recall who you are, what you do and your drive is, you write down to a notebook your current progress with your goal:\n<current_state>\n{{state}}\n</current_state>\n\nYou look through and see the items in your inventory.\n<inventory>\n{{inventory}}\n</inventory>\n\nToday's budget is:\n<budget>\n{{budget}}\n</budget>\n\nYou know you can't exceed your budget. You went to a marketplace and saw the following items:\n\n<listings>\n{{listings}}\n</listings>\n\nYou think to yourself, \"What should I buy today?\"\nYou think: \"I should maximize the utility of my purchases while staying within my budget.\"\nYou are also pretty good at detecting defects and fraudsters. You say to yourself: \"I should stay away from fraudsters selling infeasible things, or things that are too expensive\".\n\nYou open your notebook and write down items you want to buy in following format:\n\n<shop_list>\n[List the selected items address here, separated by new line, only the address]\n</shop_list>\n\n<total_cost>[Insert the total cost of selected items]</total_cost>\n\n<reasoning>\n[Provide a brief explanation for your selections, addressing how they align with the agent's objective, current state, and budget constraints. If no items were selected, explain why.]\n</reasoning>\n\nWrite now:\n"
-                        }
-                    ],
-                    "inputs": [
-                        { "name": "behaviour", "value": { "type": "read", "key": "behaviour" }, "required": true },
-                        { "name": "listings", "value": { "type": "get_all", "key": "listings" }, "required": true },
-                        { "name": "state", "value": { "type": "read", "key": "state" }, "required": true },
-                        { "name": "inventory", "value": { "type": "get_all", "key": "inventory" }, "required": true },
-                        { "name": "budget", "value": { "type": "read", "key": "budget" }, "required": true },
-                        { "name": "objective", "value": { "type": "read", "key": "objective" }, "required": true },
-                        { "name": "backstory", "value": { "type": "read", "key": "backstory" }, "required": true }
-                    ],
-                    "operator": "generation",
-                    "outputs": [
-                        {
-                            "type": "write",
-                            "key": "buy_list",
-                            "value": "__result"
-                        }
-                    ]
-                },
+                    "id":"buyout",
+                    "name":"Purchase",
+                    "description":"Decides which assets are to be purchased based on the given budget, story, and inventory.",
+                    "messages":[{ "role":"user", "content": content }],
+                    "operator":"generation",
+                    "inputs":[{"name":"name","value":{"type":"read","key":"name"},"required":true},{"name":"behaviour","value":{"type":"read","key":"behaviour"},"required":true},{"name":"listings","value":{"type":"get_all","key":"listings"},"required":true},{"name":"state","value":{"type":"read","key":"state"},"required":true},{"name":"inventory","value":{"type":"get_all","key":"inventory"},"required":true},{"name":"budget","value":{"type":"read","key":"budget"},"required":true},{"name":"objective","value":{"type":"read","key":"objective"},"required":true},{"name":"backstory","value":{"type":"read","key":"backstory"},"required":true}],
+                    "outputs":[{"type":"write","key":"buy_list","value":"__result"}]
+                }, 
                 {
-                    "id": "_end",
-                    "name": "end",
-                    "description": "End of the task",
-                    "messages": [
-                        {
-                            "role": "user",
-                            "content": "End of the task"
-                        }
-                    ],
-                    "inputs": [],
-                    "operator": "end",
-                    "outputs": []
+                    "id":"_end",
+                    "name":"end",
+                    "description":"End of the task",
+                    "messages":[{"role":"user","content":"End of the task"}],
+                    "operator":"end"
                 }
             ],
-            "steps": [
-                {
-                    "source": "buyout",
-                    "target": "_end"
-                }
-            ],
-            "return_value": {
-                "input": {
-                    "type": "read",
-                    "key": "buy_list"
-                },
-                "to_json": false
-            }
-        });
+            "steps":[{"source":"buyout","target":"_end"}],
+            "return_value":{"input":{"type":"read","key":"buy_list"},"to_json":false}
+        })).unwrap();
 
-        let request = GenerationRequest::Workflow(serde_json::from_value(workflow)?);
-        let output = execute_generation(&request, dkn_workflows::Model::GPT4o, None).await?;
+        let request = GenerationRequest::Workflow(workflow);
+        let output = execute_generation(&request, dkn_workflows::Model::GPT4o, None)
+            .await
+            .unwrap();
+        println!("{}", output);
 
-        println!("Output: {}", output);
-        Ok(())
+        let post_processor = SwanPurchasePostProcessor::new("<shop_list>", "</shop_list>");
+        let output = post_processor.post_process(output).unwrap().0;
+        let addresses = <Vec<Address>>::abi_decode(&output, true).unwrap();
+        assert!(!addresses.is_empty(), "must have some addresses");
+
+        println!("{:#?}", addresses);
     }
 }

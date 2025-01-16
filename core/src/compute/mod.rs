@@ -11,4 +11,4 @@ pub mod validation;
 pub use validation::handle_validation;
 
 mod utils;
-pub(self) use utils::parse_downloadable;
+use utils::parse_downloadable;
