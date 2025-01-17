@@ -1,8 +1,10 @@
 use super::{DriaOracle, DriaOracleConfig};
 use alloy::contract::CallBuilder;
 use alloy::hex::FromHex;
-use alloy::primitives::utils::parse_ether;
+
+#[cfg(feature = "anvil")]
 use alloy::providers::ext::AnvilApi;
+
 use alloy::providers::{PendingTransactionBuilder, WalletProvider};
 use alloy::transports::RpcError;
 use alloy::{
@@ -43,7 +45,7 @@ impl DriaOracle {
         provider
             .anvil_set_balance(
                 config.wallet.default_signer().address(),
-                parse_ether(Self::ANVIL_FUND_ETHER).unwrap(),
+                alloy::primitives::utils::parse_ether(Self::ANVIL_FUND_ETHER).unwrap(),
             )
             .await?;
 
