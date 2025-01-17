@@ -110,8 +110,6 @@ pub async fn execute_generation(
 mod tests {
     use super::*;
     use crate::compute::generation::request::{ChatHistoryRequest, GenerationRequest};
-    use dkn_workflows::Model;
-
     #[tokio::test]
     #[ignore = "run this manually"]
     async fn test_ollama_generation() {
@@ -160,11 +158,11 @@ mod tests {
 
     #[tokio::test]
     #[ignore = "run this manually"]
-    async fn test_raw_workflow() {
+    async fn test_workflow_on_arweave() {
         // cargo test --package dria-oracle --lib --all-features -- compute::generation::execute::tests::test_raw_workflow --exact --show-output --ignored
         dotenvy::dotenv().unwrap();
 
-        let contract_result = hex_literal::hex!("7b2261727765617665223a224d49555775656361634b417a62755442335a6a57613463784e6461774d71435a704550694f71675a625a63227d");
+        let contract_result = hex_literal::hex!("7b2261727765617665223a22396e52546d4e6742703758384650714968794430546f65447259687579414f345f507342476638566c6e73227d");
         let request = GenerationRequest::try_parse_bytes(&contract_result.into())
             .await
             .unwrap();

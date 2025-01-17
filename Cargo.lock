@@ -1954,7 +1954,6 @@ version = "0.2.33"
 dependencies = [
  "alloy",
  "alloy-chains",
- "async-trait",
  "base64 0.22.1",
  "bytes 1.9.0",
  "clap",

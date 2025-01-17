@@ -1,8 +1,6 @@
-use alloy::{
-    eips::BlockNumberOrTag,
-    primitives::{utils::parse_ether, Address},
-    sol_types::SolValue,
-};
+#![cfg(feature = "anvil")]
+
+use alloy::{eips::BlockNumberOrTag, primitives::utils::parse_ether};
 use dkn_workflows::Model;
 use dria_oracle::{handle_request, DriaOracle, DriaOracleConfig};
 use dria_oracle_contracts::{string_to_bytes, OracleKind, TaskStatus, WETH};
@@ -37,7 +35,7 @@ async fn test_swan() -> Result<()> {
 
     // node setup
     let config = DriaOracleConfig::new_from_env()?;
-    let (node, _anvil) = DriaOracle::anvil_new(config).await?;
+    let node = DriaOracle::new(config).await?;
 
     // setup accounts
     let requester = node.connect(node.anvil_funded_wallet(None).await?);
@@ -144,10 +142,7 @@ async fn test_swan() -> Result<()> {
     let responses = node.get_task_responses(task_id).await?;
     assert_eq!(responses.len(), 1);
     let response = responses.into_iter().next().unwrap();
-    println!(
-        "Output: {:?}",
-        Vec::<Address>::abi_decode(&response.output, true)
-    );
+    println!("Output: {:?}", response.output);
     assert!(!response.score.is_zero(), "score must be non-zero");
 
     Ok(())

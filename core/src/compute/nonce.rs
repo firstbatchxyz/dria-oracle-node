@@ -79,7 +79,7 @@ mod tests {
         dotenvy::dotenv().unwrap();
 
         let config = DriaOracleConfig::new_from_env()?;
-        let (node, _anvil) = DriaOracle::anvil_new(config).await?;
+        let node = DriaOracle::new(config).await?;
         let contract = TestNonce::deploy(&node.provider).await?;
 
         // prepare parameters

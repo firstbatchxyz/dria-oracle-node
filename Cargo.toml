@@ -12,7 +12,7 @@ authors = ["erhant"]
 
 [workspace.dependencies]
 # core
-alloy = { version = "0.8.0", features = ["full", "node-bindings"] }
+alloy = { version = "0.8.0", features = ["full"] }
 alloy-chains = "0.1.24"
 tokio = { version = "1.39.2", features = [
     "macros",
@@ -31,15 +31,9 @@ log = "0.4.22"
 dotenvy = "0.15.7"
 
 # utils
-futures-util = "0.3.30"
 async-trait = "0.1.81"
-bytes = "1.7.1"
-rand = "0.8.5"
 reqwest = "0.12.5"
 
-# b64, hex, serde
-base64 = "0.22.1"
-hex = "0.4.3"
-hex-literal = "0.4.1"
+# serde
 serde = "1.0.204"
 serde_json = "1.0.122"

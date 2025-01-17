@@ -27,26 +27,28 @@ pub fn contract_error_report(error: Error) -> ErrReport {
         Error::ContractNotDeployed => eyre!("Contract is not deployed"),
         Error::AbiError(e) => eyre!("An error occurred ABI encoding or decoding: {}", e),
         Error::TransportError(error) => {
+            const VALIDATE: bool = false;
+
             // here we try to parse the error w.r.t provided contract interfaces
             // or return a default one in the end if it was not parsed successfully
             if let Some(payload) = error.as_error_resp() {
                 // an ERC20 error
-                if let Some(erc_20_error) = payload.as_decoded_error::<ERC20Errors>(false) {
-                    return erc_20_error.into();
+                if let Some(erc_20_error) = payload.as_decoded_error::<ERC20Errors>(VALIDATE) {
+                    erc_20_error.into()
                 } else
                 // an OracleRegistry error
                 if let Some(registry_error) =
-                    payload.as_decoded_error::<OracleRegistryErrors>(false)
+                    payload.as_decoded_error::<OracleRegistryErrors>(VALIDATE)
                 {
-                    return registry_error.into();
+                    registry_error.into()
                 } else
                 // an OracleCoordinator error
                 if let Some(coordinator_error) =
-                    payload.as_decoded_error::<OracleCoordinatorErrors>(false)
+                    payload.as_decoded_error::<OracleCoordinatorErrors>(VALIDATE)
                 {
-                    return coordinator_error.into();
+                    coordinator_error.into()
                 } else {
-                    return eyre!("Unhandled error response: {:#?}", error);
+                    eyre!("Unhandled error response: {:#?}", error)
                 }
             } else {
                 eyre!("Unknown transport error: {:#?}", error)

@@ -226,12 +226,13 @@ impl IsExternalStorage for ArweaveStorage {
     /// { arweave: "Zg6CZYfxXCWYnCuKEpnZCYfy7ghit1_v4-BCe53iWuA" }
     /// ```
     #[inline(always)]
-    fn is_key(key: &str) -> Option<Self::Key> {
-        serde_json::from_str::<ArweaveKey>(key).ok()
+    fn is_key(key: impl AsRef<str>) -> Option<Self::Key> {
+        serde_json::from_str::<ArweaveKey>(key.as_ref()).ok()
     }
 
-    fn describe() -> String {
-        "Arweave".to_string()
+    #[inline(always)]
+    fn describe() -> &'static str {
+        "Arweave"
     }
 }
 
