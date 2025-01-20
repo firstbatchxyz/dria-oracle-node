@@ -1,3 +1,5 @@
+use crate::node::utils::get_connected_chain;
+
 use super::{DriaOracle, DriaOracleConfig};
 use alloy::contract::CallBuilder;
 use alloy::hex::FromHex;
@@ -12,7 +14,6 @@ use alloy::{
     primitives::Address,
     providers::{Provider, ProviderBuilder},
 };
-use alloy_chains::Chain;
 use dkn_workflows::{DriaWorkflowsConfig, Model, ModelProvider};
 use dria_oracle_contracts::{
     contract_error_report, get_coordinator_address, ContractAddresses, OracleCoordinator,
@@ -50,13 +51,7 @@ impl DriaOracle {
             .await?;
 
         // fetch the chain id so that we can use the correct addresses
-        let chain_id_u64 = provider
-            .get_chain_id()
-            .await
-            .wrap_err("could not get chain id")?;
-        let chain = Chain::from_id(chain_id_u64)
-            .named()
-            .expect("expected a named chain");
+        let chain = get_connected_chain(&provider).await?;
 
         #[cfg(not(feature = "anvil"))]
         log::info!("Connected to chain: {}", chain);
@@ -94,8 +89,8 @@ impl DriaOracle {
                 token: token_address,
             },
             provider,
-            kinds: Vec::default(),
-            workflows: DriaWorkflowsConfig::default(),
+            kinds: Vec::default(), // TODO: take this from main config
+            workflows: DriaWorkflowsConfig::default(), // TODO: take this from main config
         };
 
         node.check_contract_sizes().await?;

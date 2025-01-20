@@ -97,9 +97,15 @@ dria-oracle registrations
 dria-oracle unregister validator
 ```
 
-> [!NOTE]
+You will need to have some tokens in your balance, which will be approved automatically if required by the register command.
+
+> [!TIP]
 >
-> You will need to have some tokens in your balance, which will be approved automatically if required by the register command.
+> Using WETH, we can do this quite easily via `cast`:
+>
+> ```sh
+> cast send 0x4200000000000000000000000000000000000006 "deposit()()" --rpc-url https://mainnet.base.org --private-key $SECRET_KEY --value $VALUE
+> ```
 
 ### Launching the Node
 

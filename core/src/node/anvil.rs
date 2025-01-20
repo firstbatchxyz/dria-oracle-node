@@ -15,9 +15,10 @@ use alloy::signers::local::PrivateKeySigner;
 use alloy::transports::http::Http;
 use dria_oracle_contracts::OracleRegistry;
 use eyre::Result;
-use reqwest::Client;
+use reqwest::{Client, Url};
 
 impl DriaOracle {
+    /// We dedicate an unused port to Anvil.
     pub const ANVIL_PORT: u16 = 8545;
     /// Default ETH funding amount for generated wallets.
     pub const ANVIL_FUND_ETHER: &'static str = "10000";
@@ -41,7 +42,7 @@ impl DriaOracle {
         let owner = registry.owner().call().await?._0;
 
         let tx = self
-            .anvil_impersonated_tx(
+            .send_impersonated_transaction(
                 registry
                     .addToWhitelist(vec![address])
                     .into_transaction_request(),
@@ -57,18 +58,23 @@ impl DriaOracle {
     ///
     /// We use this due to the issue: https://github.com/alloy-rs/alloy/issues/1918
     #[inline]
-    pub async fn anvil_impersonated_tx(
+    pub async fn send_impersonated_transaction(
         &self,
         tx: TransactionRequest,
         from: Address,
     ) -> Result<PendingTransactionBuilder<Http<Client>, Ethereum>> {
-        let anvil = ProviderBuilder::new()
-            .on_http(format!("http://localhost:{}", Self::ANVIL_PORT).parse()?);
+        let anvil = ProviderBuilder::new().on_http(Self::anvil_url());
 
         anvil.anvil_impersonate_account(from).await?;
         let pending_tx = anvil.send_transaction(tx.from(from)).await?;
         anvil.anvil_stop_impersonating_account(from).await?;
 
         Ok(pending_tx)
+    }
+
+    /// Returns the spawned Anvil URL, can be used with `ProviderBuilder::new().on_http(url)`.
+    #[inline(always)]
+    pub fn anvil_url() -> Url {
+        Url::parse(&format!("http://localhost:{}", Self::ANVIL_PORT)).expect("could not parse URL")
     }
 }

@@ -2,6 +2,7 @@ mod coordinator;
 mod core;
 mod registry;
 mod token;
+mod utils;
 
 #[cfg(feature = "anvil")]
 mod anvil;
