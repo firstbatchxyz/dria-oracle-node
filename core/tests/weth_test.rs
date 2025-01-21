@@ -1,9 +1,9 @@
-#![cfg(feature = "anvil")]
 //! Using the forked blockchain, creates two accounts (alice, bob) and then,
 //!
 //! 1. Alice buys WETH
 //! 2. Alice approves Bob
 //! 3. Bob transfers WETH from Alice
+#![cfg(feature = "anvil")]
 
 use alloy::primitives::utils::parse_ether;
 use dria_oracle::{DriaOracle, DriaOracleConfig};
@@ -22,11 +22,11 @@ async fn test_weth_transfer() -> Result<()> {
 
     // setup alice
     let alice = node.connect(node.anvil_new_funded_wallet(None).await?);
-    let alice_token = WETH::new(node.addresses.token, &alice.provider);
+    let alice_token = WETH::new(*node.token.address(), &alice.provider);
 
     // setup bob
     let bob = node.connect(node.anvil_new_funded_wallet(None).await?);
-    let bob_token = WETH::new(node.addresses.token, &bob.provider);
+    let bob_token = WETH::new(*node.token.address(), &bob.provider);
 
     // record existing balances
     let alice_balance_before = node.get_token_balance(alice.address()).await?;

@@ -1,3 +1,8 @@
+//! Test the oracle with a simple 2 + 2 question.
+//!
+//! ```sh
+//! cargo test --package dria-oracle --test oracle_test --all-features -- test_oracle_two_plus_two --exact --show-output
+//! ```
 #![cfg(feature = "anvil")]
 
 use alloy::{eips::BlockNumberOrTag, primitives::utils::parse_ether};
@@ -6,7 +11,6 @@ use dria_oracle::{handle_request, DriaOracle, DriaOracleConfig};
 use dria_oracle_contracts::{bytes_to_string, string_to_bytes, OracleKind, TaskStatus, WETH};
 use eyre::Result;
 
-// cargo test --package dria-oracle --test oracle_test --all-features -- test_oracle_two_plus_two --exact --show-output
 #[tokio::test]
 async fn test_oracle_two_plus_two() -> Result<()> {
     dotenvy::dotenv().unwrap();
@@ -18,8 +22,9 @@ async fn test_oracle_two_plus_two() -> Result<()> {
         .try_init();
 
     // task setup
+    let model = Model::GPT4o;
     let difficulty = 1;
-    let models = string_to_bytes(Model::GPT4Turbo.to_string());
+    let models = string_to_bytes(model.to_string());
     let protocol = format!("test/{}", env!("CARGO_PKG_VERSION"));
     let input = string_to_bytes("What is the result of 2 + 2?".to_string());
 
@@ -33,9 +38,9 @@ async fn test_oracle_two_plus_two() -> Result<()> {
     let mut validator = node.connect(node.anvil_new_funded_wallet(None).await?);
 
     // buy some WETH for all people
-    let amount = parse_ether("100").unwrap();
+    let amount = parse_ether("100")?;
     for node in [&requester, &generator, &validator] {
-        let token = WETH::new(node.addresses.token, &node.provider);
+        let token = WETH::new(*node.token.address(), &node.provider);
         let balance_before = node.get_token_balance(node.address()).await?;
 
         let call = token.deposit().value(amount);
@@ -52,20 +57,20 @@ async fn test_oracle_two_plus_two() -> Result<()> {
     // register & prepare generator oracle
     generator.register(OracleKind::Generator).await?;
     generator
-        .prepare_oracle(vec![OracleKind::Generator], vec![Model::GPT4Turbo])
+        .prepare_oracle(vec![OracleKind::Generator], vec![model.clone()])
         .await?;
     assert!(generator.is_registered(OracleKind::Generator).await?);
 
     // register & prepare validator oracle
     validator.register(OracleKind::Validator).await?;
     validator
-        .prepare_oracle(vec![OracleKind::Validator], vec![Model::GPT4o])
+        .prepare_oracle(vec![OracleKind::Validator], vec![model])
         .await?;
     assert!(validator.is_registered(OracleKind::Validator).await?);
 
     // approve some tokens for the coordinator from requester
     requester
-        .approve(node.addresses.coordinator, amount)
+        .approve(*node.coordinator.address(), amount)
         .await?;
 
     // make a request with just one generation and validation request

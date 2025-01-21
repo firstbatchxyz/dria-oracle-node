@@ -33,10 +33,7 @@ pub async fn handle_validation(
 
     // fetch the request from contract
     log::debug!("Fetching the task request");
-    let request = node
-        .get_task_request(task_id)
-        .await
-        .wrap_err("could not get task request")?;
+    let request = node.coordinator.requests(task_id).call().await?;
 
     // fetch each generation response & download its metadata
     log::debug!("Fetching response messages");

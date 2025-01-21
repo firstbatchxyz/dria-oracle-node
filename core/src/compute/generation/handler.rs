@@ -5,7 +5,7 @@ use alloy::{
 };
 use dria_oracle_contracts::{bytes32_to_string, bytes_to_string};
 use dria_oracle_storage::ArweaveStorage;
-use eyre::{Context, Result};
+use eyre::Result;
 
 use super::postprocess::*;
 use super::request::GenerationRequest;
@@ -33,10 +33,7 @@ pub async fn handle_generation(
 
     // fetch the request from contract
     log::debug!("Fetching the task request");
-    let request = node
-        .get_task_request(task_id)
-        .await
-        .wrap_err("could not get task")?;
+    let request = node.coordinator.requests(task_id).call().await?;
 
     // choose model based on the request
     log::debug!("Choosing model to use");

@@ -13,7 +13,6 @@ use alloy::providers::{PendingTransactionBuilder, Provider, ProviderBuilder};
 use alloy::rpc::types::{TransactionReceipt, TransactionRequest};
 use alloy::signers::local::PrivateKeySigner;
 use alloy::transports::http::Http;
-use dria_oracle_contracts::OracleRegistry;
 use eyre::Result;
 use reqwest::{Client, Url};
 
@@ -38,12 +37,15 @@ impl DriaOracle {
 
     /// Whitelists a given address, impersonates the owner in doing so.
     pub async fn anvil_whitelist_registry(&self, address: Address) -> Result<TransactionReceipt> {
-        let registry = OracleRegistry::new(self.addresses.registry, &self.provider);
-        let owner = registry.owner().call().await?._0;
+        let owner = self.registry.owner().call().await?._0;
+
+        // increase owner balance
+        self.anvil_increase_balance(owner, parse_ether("1").unwrap())
+            .await?;
 
         let tx = self
             .send_impersonated_transaction(
-                registry
+                self.registry
                     .addToWhitelist(vec![address])
                     .into_transaction_request(),
                 owner,
@@ -52,6 +54,16 @@ impl DriaOracle {
         let receipt = self.wait_for_tx(tx).await?;
 
         Ok(receipt)
+    }
+
+    /// Increases the balance of an account by the given amount.
+    #[inline]
+    pub async fn anvil_increase_balance(&self, address: Address, amount: U256) -> Result<()> {
+        let balance = self.provider.get_balance(address).await?;
+        self.provider
+            .anvil_set_balance(address, balance + amount)
+            .await?;
+        Ok(())
     }
 
     /// Assumes that an Anvil instance is running already at the given port.

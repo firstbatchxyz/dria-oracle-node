@@ -1,4 +1,4 @@
-use super::{DriaOracle, DriaOracleProviderTransport};
+use super::{DriaOracle, DriaOracleTransport};
 
 use alloy::contract::EventPoller;
 use alloy::eips::BlockNumberOrTag;
@@ -10,7 +10,7 @@ use dria_oracle_contracts::LLMOracleTask::{TaskResponse, TaskValidation};
 use eyre::{eyre, Result};
 
 use dria_oracle_contracts::OracleCoordinator::{
-    self, getFeeReturn, getResponsesReturn, getValidationsReturn, requestsReturn,
+    getFeeReturn, getResponsesReturn, getValidationsReturn, requestsReturn,
     LLMOracleTaskParameters, StatusUpdate,
 };
 
@@ -25,15 +25,15 @@ impl DriaOracle {
         num_vals: u64,
         protocol: String,
     ) -> Result<TransactionReceipt> {
-        let coordinator = OracleCoordinator::new(self.addresses.coordinator, &self.provider);
-
         let parameters = LLMOracleTaskParameters {
             difficulty,
             numGenerations: U40::from(num_gens),
             numValidations: U40::from(num_vals),
         };
 
-        let req = coordinator.request(string_to_bytes32(protocol)?, input, models, parameters);
+        let req = self
+            .coordinator
+            .request(string_to_bytes32(protocol)?, input, models, parameters);
         let tx = self.send_with_gas_hikes(req).await?;
         self.wait_for_tx(tx).await
     }
@@ -41,36 +41,19 @@ impl DriaOracle {
     /// Returns the best response to a given task request, as per their scores.
     /// Note that this logic takes place at contract level, and will revert if the task is not completed.
     pub async fn get_task_best_response(&self, task_id: U256) -> Result<TaskResponse> {
-        let coordinator = OracleCoordinator::new(self.addresses.coordinator, &self.provider);
-
-        let request = coordinator.getBestResponse(task_id).call().await?;
+        let request = self.coordinator.getBestResponse(task_id).call().await?;
         Ok(request._0)
-    }
-
-    /// Returns the task request with the given id.
-    pub async fn get_task_request(
-        &self,
-        task_id: U256,
-    ) -> Result<OracleCoordinator::requestsReturn> {
-        let coordinator = OracleCoordinator::new(self.addresses.coordinator, &self.provider);
-
-        let request = coordinator.requests(task_id).call().await?;
-        Ok(request)
     }
 
     /// Returns the generation responses to a given task request.
     pub async fn get_task_responses(&self, task_id: U256) -> Result<Vec<TaskResponse>> {
-        let coordinator = OracleCoordinator::new(self.addresses.coordinator, &self.provider);
-
-        let responses = coordinator.getResponses(task_id).call().await?;
+        let responses = self.coordinator.getResponses(task_id).call().await?;
         Ok(responses._0)
     }
 
     /// Returns the validation responses to a given task request.
     pub async fn get_task_validations(&self, task_id: U256) -> Result<Vec<TaskValidation>> {
-        let coordinator = OracleCoordinator::new(self.addresses.coordinator, &self.provider);
-
-        let responses = coordinator.getValidations(task_id).call().await?;
+        let responses = self.coordinator.getValidations(task_id).call().await?;
         Ok(responses._0)
     }
 
@@ -82,9 +65,7 @@ impl DriaOracle {
         metadata: Bytes,
         nonce: U256,
     ) -> Result<TransactionReceipt> {
-        let coordinator = OracleCoordinator::new(self.addresses.coordinator, &self.provider);
-
-        let req = coordinator.respond(task_id, nonce, response, metadata);
+        let req = self.coordinator.respond(task_id, nonce, response, metadata);
         let tx = self.send_with_gas_hikes(req).await?;
         self.wait_for_tx(tx).await
     }
@@ -98,9 +79,7 @@ impl DriaOracle {
         metadata: Bytes,
         nonce: U256,
     ) -> Result<TransactionReceipt> {
-        let coordinator = OracleCoordinator::new(self.addresses.coordinator, &self.provider);
-
-        let req = coordinator.validate(task_id, nonce, scores, metadata);
+        let req = self.coordinator.validate(task_id, nonce, scores, metadata);
         let tx = self.send_with_gas_hikes(req).await?;
         self.wait_for_tx(tx).await
     }
@@ -109,10 +88,8 @@ impl DriaOracle {
     #[inline]
     pub async fn subscribe_to_tasks(
         &self,
-    ) -> Result<EventPoller<DriaOracleProviderTransport, StatusUpdate>> {
-        let coordinator = OracleCoordinator::new(self.addresses.coordinator, &self.provider);
-
-        Ok(coordinator.StatusUpdate_filter().watch().await?)
+    ) -> Result<EventPoller<DriaOracleTransport, StatusUpdate>> {
+        Ok(self.coordinator.StatusUpdate_filter().watch().await?)
     }
 
     /// Get previous tasks within the range of blocks.
@@ -121,9 +98,8 @@ impl DriaOracle {
         from_block: impl Into<BlockNumberOrTag>,
         to_block: impl Into<BlockNumberOrTag>,
     ) -> Result<Vec<(StatusUpdate, Log)>> {
-        let coordinator = OracleCoordinator::new(self.addresses.coordinator, &self.provider);
-
-        let tasks = coordinator
+        let tasks = self
+            .coordinator
             .StatusUpdate_filter()
             .from_block(from_block)
             .to_block(to_block)
@@ -138,19 +114,17 @@ impl DriaOracle {
         &self,
         task_id: U256,
     ) -> Result<(requestsReturn, getResponsesReturn, getValidationsReturn)> {
-        let coordinator = OracleCoordinator::new(self.addresses.coordinator, &self.provider);
-
         // check if task id is valid
         if task_id.is_zero() {
             return Err(eyre!("Task ID must be non-zero."));
-        } else if task_id >= coordinator.nextTaskId().call().await?._0 {
+        } else if task_id >= self.coordinator.nextTaskId().call().await?._0 {
             return Err(eyre!("Task with id {} has not been created yet.", task_id));
         }
 
         // get task info
-        let request = coordinator.requests(task_id).call().await?;
-        let responses = coordinator.getResponses(task_id).call().await?;
-        let validations = coordinator.getValidations(task_id).call().await?;
+        let request = self.coordinator.requests(task_id).call().await?;
+        let responses = self.coordinator.getResponses(task_id).call().await?;
+        let validations = self.coordinator.getValidations(task_id).call().await?;
 
         Ok((request, responses, validations))
     }
@@ -158,9 +132,7 @@ impl DriaOracle {
     /// Returns the next task id.
     #[inline]
     pub async fn get_next_task_id(&self) -> Result<U256> {
-        let coordinator = OracleCoordinator::new(self.addresses.coordinator, &self.provider);
-
-        let task_id = coordinator.nextTaskId().call().await?;
+        let task_id = self.coordinator.nextTaskId().call().await?;
         Ok(task_id._0)
     }
 
@@ -171,15 +143,13 @@ impl DriaOracle {
         num_gens: u64,
         num_vals: u64,
     ) -> Result<getFeeReturn> {
-        let coordinator = OracleCoordinator::new(self.addresses.coordinator, &self.provider);
-
         let parameters = LLMOracleTaskParameters {
             difficulty,
             numGenerations: U40::from(num_gens),
             numValidations: U40::from(num_vals),
         };
 
-        let fees = coordinator.getFee(parameters).call().await?;
+        let fees = self.coordinator.getFee(parameters).call().await?;
 
         Ok(fees)
     }

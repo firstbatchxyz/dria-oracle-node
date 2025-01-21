@@ -15,9 +15,10 @@ use alloy::{
     providers::{Provider, ProviderBuilder},
 };
 use dkn_workflows::{DriaWorkflowsConfig, Model, ModelProvider};
+use dria_oracle_contracts::ERC20::ERC20Instance;
 use dria_oracle_contracts::{
-    contract_error_report, get_coordinator_address, ContractAddresses, OracleCoordinator,
-    OracleKind, TokenBalance,
+    contract_error_report, get_coordinator_address, OracleCoordinator, OracleKind, OracleRegistry,
+    TokenBalance, ERC20,
 };
 use eyre::{eyre, Context, Result};
 use std::env;
@@ -59,36 +60,39 @@ impl DriaOracle {
         log::info!("Connected to Anvil with forked chain: {}", chain);
 
         // get coordinator address from static list or the environment
-        // address within env can have 0x at the start, or not, does not matter
+        // (address within env can have 0x at the start, or not, does not matter)
+        // and then create the coordinator instance
         let coordinator_address = if let Ok(addr) = env::var("COORDINATOR_ADDRESS") {
             Address::from_hex(addr).wrap_err("could not parse coordinator address in env")?
         } else {
             get_coordinator_address(chain)?
         };
+        let coordinator = OracleCoordinator::new(coordinator_address, provider.clone());
 
-        // create a coordinator instance and get token & registry addresses
-        let coordinator = OracleCoordinator::new(coordinator_address, &provider);
-        let token_address = coordinator
-            .feeToken()
-            .call()
-            .await
-            .wrap_err("could not get token address from the coordinator")?
-            ._0;
+        // get registry address from the coordinator & create instance
         let registry_address = coordinator
             .registry()
             .call()
             .await
             .wrap_err("could not get registry address from the coordinator")?
             ._0;
+        let registry = OracleRegistry::new(registry_address, provider.clone());
+
+        // get token address from the coordinator & create instance
+        let token_address = coordinator
+            .feeToken()
+            .call()
+            .await
+            .wrap_err("could not get token address from the coordinator")?
+            ._0;
+        let token = ERC20::new(token_address, provider.clone());
 
         let node = Self {
             config,
-            addresses: ContractAddresses {
-                coordinator: coordinator_address,
-                registry: registry_address,
-                token: token_address,
-            },
             provider,
+            token,
+            coordinator,
+            registry,
             kinds: Vec::default(), // TODO: take this from main config
             workflows: DriaWorkflowsConfig::default(), // TODO: take this from main config
         };
@@ -104,12 +108,17 @@ impl DriaOracle {
         let mut provider = self.provider.clone();
         *provider.wallet_mut() = wallet.clone();
 
+        let token = ERC20Instance::new(*self.token.address(), provider.clone());
+        let coordinator = OracleCoordinator::new(*self.coordinator.address(), provider.clone());
+        let registry = OracleRegistry::new(*self.registry.address(), provider.clone());
         Self {
             provider,
             config: self.config.clone().with_wallet(wallet),
-            addresses: self.addresses.clone(),
             kinds: self.kinds.clone(),
             workflows: self.workflows.clone(),
+            token,
+            coordinator,
+            registry,
         }
     }
 
@@ -273,7 +282,7 @@ impl core::fmt::Display for DriaOracle {
             env!("CARGO_PKG_VERSION"),
             self.address(),
             self.config.rpc_url,
-            self.addresses.coordinator,
+            self.coordinator.address(),
             self.config.tx_timeout.map(|t| t.as_secs()).unwrap_or_default()
         )
     }

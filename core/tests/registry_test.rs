@@ -22,8 +22,10 @@ async fn test_registry() -> Result<()> {
     // tries to register if registered, or opposite, to trigger an error
     const KIND: OracleKind = OracleKind::Generator;
     let result = if node.is_registered(KIND).await? {
+        log::info!("Oracle is registered, we will try to register again to get an error.");
         node.register_kind(KIND).await
     } else {
+        log::info!("Oracle is not registered, we will try to unregister again to get an error.");
         node.unregister_kind(KIND).await
     };
     assert!(result.is_err());

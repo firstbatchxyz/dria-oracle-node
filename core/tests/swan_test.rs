@@ -48,7 +48,7 @@ async fn test_swan() -> Result<()> {
     for node in [&requester, &generator, &validator] {
         let balance_before = node.get_token_balance(node.address()).await?;
 
-        let token = WETH::new(node.addresses.token, &node.provider);
+        let token = WETH::new(*node.token.address(), &node.provider);
         let call = token.deposit().value(amount);
         let _ = call.send().await?.get_receipt().await?;
 
@@ -76,7 +76,7 @@ async fn test_swan() -> Result<()> {
 
     // approve some tokens for the coordinator from requester
     requester
-        .approve(node.addresses.coordinator, amount)
+        .approve(*node.coordinator.address(), amount)
         .await?;
 
     // make a request with just one generation and validation request

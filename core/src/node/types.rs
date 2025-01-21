@@ -16,7 +16,7 @@ pub type DriaOracleProviderTransport =
     alloy::transports::http::Http<alloy::transports::http::Client>;
 
 #[cfg(feature = "anvil")]
-pub type DriaOracleProviderTransport = alloy::transports::BoxTransport;
+pub type DriaOracleTransport = alloy::transports::BoxTransport;
 
 #[cfg(not(feature = "anvil"))]
 pub type DriaOracleProvider = FillProvider<
@@ -27,8 +27,8 @@ pub type DriaOracleProvider = FillProvider<
         >,
         WalletFiller<EthereumWallet>,
     >,
-    RootProvider<DriaOracleProviderTransport>,
-    DriaOracleProviderTransport,
+    RootProvider<DriaOracleTransport>,
+    DriaOracleTransport,
     Ethereum,
 >;
 
@@ -41,10 +41,7 @@ pub type DriaOracleProvider = FillProvider<
         >,
         WalletFiller<EthereumWallet>,
     >,
-    alloy::providers::layers::AnvilProvider<
-        RootProvider<DriaOracleProviderTransport>,
-        DriaOracleProviderTransport,
-    >,
-    DriaOracleProviderTransport,
+    alloy::providers::layers::AnvilProvider<RootProvider<DriaOracleTransport>, DriaOracleTransport>,
+    DriaOracleTransport,
     Ethereum,
 >;

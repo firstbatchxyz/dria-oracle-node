@@ -71,7 +71,7 @@ pub async fn execute_generation(
                     messages
                 } else {
                     // otherwise, we can fallback to fetching input manually and creating a new history on-the-fly
-                    let request = node.get_task_request(history_id).await?;
+                    let request = node.coordinator.requests(history_id).call().await?;
                     let input = parse_downloadable(&request.input).await?;
 
                     // create a new history with the input

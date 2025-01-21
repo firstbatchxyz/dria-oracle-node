@@ -44,7 +44,6 @@ async fn main() -> eyre::Result<()> {
     // create node
     let node = DriaOracle::new(config).await?;
     log::info!("{}", node);
-    log::info!("{}", node.addresses);
 
     // handle cli command
     dria_oracle::handle_command(cli.command, node).await?;

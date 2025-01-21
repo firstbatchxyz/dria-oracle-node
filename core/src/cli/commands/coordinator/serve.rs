@@ -6,7 +6,7 @@ use eyre::Result;
 impl DriaOracle {
     pub(in crate::cli) async fn process_task_by_id(&self, task_id: U256) -> Result<()> {
         log::info!("Processing task {}.", task_id);
-        let request = self.get_task_request(task_id).await?;
+        let request = self.coordinator.requests(task_id).call().await?;
 
         log::info!(
             "Request Information:\nRequester: {}\nStatus:    {}\nInput:     {}\nModels:    {}",

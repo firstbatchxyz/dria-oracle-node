@@ -1,10 +1,13 @@
-#![cfg(feature = "anvil")]
-
 //! Tests the request command, resulting in a task being created in the coordinator contract.
 //!
 //! 1. Requester buys some WETH, and it is approved within the request command.
 //! 2. Requester requests a task with a given input, models, difficulty, num_gens, and num_vals.
 //! 3. The task is created in the coordinator contract.
+//!
+//! ```sh
+//! cargo test --package dria-oracle --test request_test --all-features -- test_request --exact --show-output
+//! ```
+#![cfg(feature = "anvil")]
 
 use alloy::primitives::{aliases::U40, utils::parse_ether};
 use dkn_workflows::Model;
@@ -34,7 +37,7 @@ async fn test_request() -> Result<()> {
 
     // setup account & buy some WETH
     let requester = node.connect(node.anvil_new_funded_wallet(None).await?);
-    let token = WETH::new(requester.addresses.token, &requester.provider);
+    let token = WETH::new(*requester.token.address(), &requester.provider);
     let _ = token.deposit().value(parse_ether("100")?).send().await?;
 
     // request a task, and see it in the coordinator
