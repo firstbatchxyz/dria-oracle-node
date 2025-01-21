@@ -224,9 +224,6 @@ Run tests with:
 make test
 ```
 
-Note that the tests make use of existing contracts, accessed via their contract addresses. The blockchain is forked locally to Anvil and tests are executed over them. Always make sure that you are using the latest contract addresses at [`src/contracts/addresses.rs`](./src/contracts/addresses.rs).
-This is especially important if you keep getting "execution reverted" for no reason!
-
 ### Documentation
 
 You can view the inline documentation with:

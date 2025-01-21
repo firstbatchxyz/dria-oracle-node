@@ -162,11 +162,11 @@ mod tests {
         // cargo test --package dria-oracle --lib --all-features -- compute::generation::execute::tests::test_raw_workflow --exact --show-output --ignored
         dotenvy::dotenv().unwrap();
 
-        let contract_result = hex_literal::hex!("7b2261727765617665223a22396e52546d4e6742703758384650714968794430546f65447259687579414f345f507342476638566c6e73227d");
+        let contract_result = hex_literal::hex!("7b2261727765617665223a223658797a572d71666e7670756b787344535a444b2d4f514a6e715a686b62703044624e4e6649696c7a706f227d");
         let request = GenerationRequest::try_parse_bytes(&contract_result.into())
             .await
             .unwrap();
-        let output = execute_generation(&request, Model::GPT4oMini, None)
+        let output = execute_generation(&request, Model::GPT4o, None)
             .await
             .unwrap();
 

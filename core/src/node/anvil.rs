@@ -26,7 +26,7 @@ impl DriaOracle {
     /// Generates a random wallet, funded with the given `fund` amount.
     ///
     /// If `fund` is not provided, 10K ETH is used.
-    pub async fn anvil_funded_wallet(&self, fund: Option<U256>) -> Result<EthereumWallet> {
+    pub async fn anvil_new_funded_wallet(&self, fund: Option<U256>) -> Result<EthereumWallet> {
         let fund = fund.unwrap_or_else(|| parse_ether(Self::ANVIL_FUND_ETHER).unwrap());
         let signer = PrivateKeySigner::random();
         self.provider

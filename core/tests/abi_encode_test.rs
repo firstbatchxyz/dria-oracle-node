@@ -1,3 +1,5 @@
+#![cfg(feature = "anvil")]
+
 use std::str::FromStr;
 
 use alloy::{

@@ -28,9 +28,9 @@ async fn test_oracle_two_plus_two() -> Result<()> {
     let node = DriaOracle::new(config).await?;
 
     // setup accounts
-    let requester = node.connect(node.anvil_funded_wallet(None).await?);
-    let mut generator = node.connect(node.anvil_funded_wallet(None).await?);
-    let mut validator = node.connect(node.anvil_funded_wallet(None).await?);
+    let requester = node.connect(node.anvil_new_funded_wallet(None).await?);
+    let mut generator = node.connect(node.anvil_new_funded_wallet(None).await?);
+    let mut validator = node.connect(node.anvil_new_funded_wallet(None).await?);
 
     // buy some WETH for all people
     let amount = parse_ether("100").unwrap();

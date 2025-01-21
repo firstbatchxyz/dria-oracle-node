@@ -33,7 +33,7 @@ async fn test_request() -> Result<()> {
     let node = DriaOracle::new(config).await?;
 
     // setup account & buy some WETH
-    let requester = node.connect(node.anvil_funded_wallet(None).await?);
+    let requester = node.connect(node.anvil_new_funded_wallet(None).await?);
     let token = WETH::new(requester.addresses.token, &requester.provider);
     let _ = token.deposit().value(parse_ether("100")?).send().await?;
 

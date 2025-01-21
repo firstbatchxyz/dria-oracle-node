@@ -17,7 +17,7 @@ use alloy::{
 use dkn_workflows::{DriaWorkflowsConfig, Model, ModelProvider};
 use dria_oracle_contracts::{
     contract_error_report, get_coordinator_address, ContractAddresses, OracleCoordinator,
-    OracleKind, OracleRegistry, TokenBalance,
+    OracleKind, TokenBalance,
 };
 use eyre::{eyre, Context, Result};
 use std::env;
@@ -92,9 +92,6 @@ impl DriaOracle {
             kinds: Vec::default(), // TODO: take this from main config
             workflows: DriaWorkflowsConfig::default(), // TODO: take this from main config
         };
-
-        node.check_contract_sizes().await?;
-        node.check_contract_tokens().await?;
 
         Ok(node)
     }
@@ -181,58 +178,6 @@ impl DriaOracle {
     pub async fn get_native_balance(&self, address: Address) -> Result<TokenBalance> {
         let balance = self.provider.get_balance(address).await?;
         Ok(TokenBalance::new(balance, "ETH", None))
-    }
-
-    /// Checks contract sizes to ensure they are deployed.
-    ///
-    /// Returns an error if any of the contracts are not deployed.
-    pub async fn check_contract_sizes(&self) -> Result<()> {
-        let coordinator_size = self
-            .provider
-            .get_code_at(self.addresses.coordinator)
-            .await
-            .map(|s| s.len())?;
-        if coordinator_size == 0 {
-            return Err(eyre!("Coordinator contract not deployed."));
-        }
-        let registry_size = self
-            .provider
-            .get_code_at(self.addresses.registry)
-            .await
-            .map(|s| s.len())?;
-        if registry_size == 0 {
-            return Err(eyre!("Registry contract not deployed."));
-        }
-        let token_size = self
-            .provider
-            .get_code_at(self.addresses.token)
-            .await
-            .map(|s| s.len())?;
-        if token_size == 0 {
-            return Err(eyre!("Token contract not deployed."));
-        }
-
-        Ok(())
-    }
-
-    /// Ensures that the registry & coordinator tokens match the expected token.
-    pub async fn check_contract_tokens(&self) -> Result<()> {
-        let coordinator = OracleCoordinator::new(self.addresses.coordinator, &self.provider);
-        let registry = OracleRegistry::new(self.addresses.registry, &self.provider);
-
-        // check registry
-        let registry_token = registry.token().call().await?._0;
-        if registry_token != self.addresses.token {
-            return Err(eyre!("Registry token does not match."));
-        }
-
-        // check coordinator
-        let coordinator_token = coordinator.feeToken().call().await?._0;
-        if coordinator_token != self.addresses.token {
-            return Err(eyre!("Registry token does not match."));
-        }
-
-        Ok(())
     }
 
     /// Returns the address of the configured wallet.

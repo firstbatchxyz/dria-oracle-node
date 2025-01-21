@@ -2,58 +2,19 @@ mod coordinator;
 mod core;
 mod registry;
 mod token;
+
+mod types;
+use types::*;
+
 mod utils;
 
 #[cfg(feature = "anvil")]
 mod anvil;
 
 use super::DriaOracleConfig;
-use alloy::providers::fillers::{
-    BlobGasFiller, ChainIdFiller, FillProvider, GasFiller, JoinFill, NonceFiller, WalletFiller,
-};
-use alloy::{
-    network::{Ethereum, EthereumWallet},
-    providers::{Identity, RootProvider},
-};
 
 use dkn_workflows::DriaWorkflowsConfig;
 use dria_oracle_contracts::{ContractAddresses, OracleKind};
-
-#[cfg(not(feature = "anvil"))]
-type DriaOracleProviderTransport = alloy::transports::http::Http<alloy::transports::http::Client>;
-#[cfg(feature = "anvil")]
-type DriaOracleProviderTransport = alloy::transports::BoxTransport;
-
-#[cfg(not(feature = "anvil"))]
-type DriaOracleProvider = FillProvider<
-    JoinFill<
-        JoinFill<
-            Identity,
-            JoinFill<GasFiller, JoinFill<BlobGasFiller, JoinFill<NonceFiller, ChainIdFiller>>>,
-        >,
-        WalletFiller<EthereumWallet>,
-    >,
-    RootProvider<DriaOracleProviderTransport>,
-    DriaOracleProviderTransport,
-    Ethereum,
->;
-
-#[cfg(feature = "anvil")]
-type DriaOracleProvider = FillProvider<
-    JoinFill<
-        JoinFill<
-            Identity,
-            JoinFill<GasFiller, JoinFill<BlobGasFiller, JoinFill<NonceFiller, ChainIdFiller>>>,
-        >,
-        WalletFiller<EthereumWallet>,
-    >,
-    alloy::providers::layers::AnvilProvider<
-        RootProvider<DriaOracleProviderTransport>,
-        DriaOracleProviderTransport,
-    >,
-    DriaOracleProviderTransport,
-    Ethereum,
->;
 
 pub struct DriaOracle {
     pub config: DriaOracleConfig,

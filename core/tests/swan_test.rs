@@ -38,9 +38,9 @@ async fn test_swan() -> Result<()> {
     let node = DriaOracle::new(config).await?;
 
     // setup accounts
-    let requester = node.connect(node.anvil_funded_wallet(None).await?);
-    let mut generator = node.connect(node.anvil_funded_wallet(None).await?);
-    let mut validator = node.connect(node.anvil_funded_wallet(None).await?);
+    let requester = node.connect(node.anvil_new_funded_wallet(None).await?);
+    let mut generator = node.connect(node.anvil_new_funded_wallet(None).await?);
+    let mut validator = node.connect(node.anvil_new_funded_wallet(None).await?);
 
     // buy some WETH for all people
     log::info!("Buying WETH for all accounts");

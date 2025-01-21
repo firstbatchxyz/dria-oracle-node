@@ -21,11 +21,11 @@ async fn test_weth_transfer() -> Result<()> {
     let node = DriaOracle::new(config).await?;
 
     // setup alice
-    let alice = node.connect(node.anvil_funded_wallet(None).await?);
+    let alice = node.connect(node.anvil_new_funded_wallet(None).await?);
     let alice_token = WETH::new(node.addresses.token, &alice.provider);
 
     // setup bob
-    let bob = node.connect(node.anvil_funded_wallet(None).await?);
+    let bob = node.connect(node.anvil_new_funded_wallet(None).await?);
     let bob_token = WETH::new(node.addresses.token, &bob.provider);
 
     // record existing balances
