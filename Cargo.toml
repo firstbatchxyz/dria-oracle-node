@@ -5,7 +5,7 @@ default-members = ["core"]
 
 [workspace.package]
 edition = "2021"
-version = "0.2.34"
+version = "0.2.35"
 license = "Apache-2.0"
 readme = "README.md"
 authors = ["erhant"]
@@ -15,9 +15,9 @@ authors = ["erhant"]
 alloy = { version = "0.8.0", features = ["full"] }
 alloy-chains = "0.1.24"
 tokio = { version = "1.39.2", features = [
-    "macros",
-    "rt-multi-thread",
-    "signal",
+  "macros",
+  "rt-multi-thread",
+  "signal",
 ] }
 tokio-util = "0.7.13"
 
