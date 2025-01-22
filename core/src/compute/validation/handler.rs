@@ -15,7 +15,7 @@ pub async fn handle_validation(
 
     // check if already responded as generator, because we cant validate our own answer
     log::debug!("Checking if we are a generator for this task");
-    let responses = node.get_task_responses(task_id).await?;
+    let responses = node.coordinator.getResponses(task_id).call().await?._0;
     if responses.iter().any(|r| r.responder == node.address()) {
         log::debug!(
             "Cant validate {} with your own generation response",
@@ -26,7 +26,7 @@ pub async fn handle_validation(
 
     // check if we have validated anyways
     log::debug!("Checking if we have validated already");
-    let validations = node.get_task_validations(task_id).await?;
+    let validations = node.coordinator.getValidations(task_id).call().await?._0;
     if validations.iter().any(|v| v.validator == node.address()) {
         return Err(eyre!("Already validated {}", task_id));
     }
@@ -37,10 +37,7 @@ pub async fn handle_validation(
 
     // fetch each generation response & download its metadata
     log::debug!("Fetching response messages");
-    let responses = node
-        .get_task_responses(task_id)
-        .await
-        .wrap_err("could not get task responses")?;
+    let responses = node.coordinator.getResponses(task_id).call().await?._0;
     let mut generations = Vec::new();
     for response in responses {
         let metadata_str = parse_downloadable(&response.metadata).await?;

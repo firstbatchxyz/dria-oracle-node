@@ -139,7 +139,7 @@ async fn test_swan() -> Result<()> {
     assert_eq!(event.statusAfter, TaskStatus::Completed as u8);
 
     // get responses
-    let responses = node.get_task_responses(task_id).await?;
+    let responses = node.coordinator.getResponses(task_id).call().await?._0;
     assert_eq!(responses.len(), 1);
     let response = responses.into_iter().next().unwrap();
     println!("Output: {:?}", response.output);

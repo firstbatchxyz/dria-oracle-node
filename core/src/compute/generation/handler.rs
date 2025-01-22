@@ -25,7 +25,7 @@ pub async fn handle_generation(
 
     // check if we have responded to this generation already
     log::debug!("Checking existing generation responses");
-    let responses = node.get_task_responses(task_id).await?;
+    let responses = node.coordinator.getResponses(task_id).call().await?._0;
     if responses.iter().any(|r| r.responder == node.address()) {
         log::debug!("Already responded to {} with generation", task_id);
         return Ok(None);

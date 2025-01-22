@@ -133,7 +133,7 @@ async fn test_oracle_two_plus_two() -> Result<()> {
     assert_eq!(event.statusAfter, TaskStatus::Completed as u8);
 
     // get responses
-    let responses = node.get_task_responses(task_id).await?;
+    let responses = node.coordinator.getResponses(task_id).call().await?._0;
     assert_eq!(responses.len(), 1);
     let response = responses.into_iter().next().unwrap();
     let output_string = bytes_to_string(&response.output)?;

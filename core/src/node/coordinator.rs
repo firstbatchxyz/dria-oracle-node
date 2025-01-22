@@ -1,12 +1,9 @@
-use super::{DriaOracle, DriaOracleTransport};
-
-use alloy::contract::EventPoller;
+use super::DriaOracle;
 use alloy::eips::BlockNumberOrTag;
 use alloy::primitives::aliases::U40;
 use alloy::primitives::{Bytes, U256};
 use alloy::rpc::types::{Log, TransactionReceipt};
 use dria_oracle_contracts::string_to_bytes32;
-use dria_oracle_contracts::LLMOracleTask::{TaskResponse, TaskValidation};
 use eyre::{eyre, Result};
 
 use dria_oracle_contracts::OracleCoordinator::{
@@ -38,25 +35,6 @@ impl DriaOracle {
         self.wait_for_tx(tx).await
     }
 
-    /// Returns the best response to a given task request, as per their scores.
-    /// Note that this logic takes place at contract level, and will revert if the task is not completed.
-    pub async fn get_task_best_response(&self, task_id: U256) -> Result<TaskResponse> {
-        let request = self.coordinator.getBestResponse(task_id).call().await?;
-        Ok(request._0)
-    }
-
-    /// Returns the generation responses to a given task request.
-    pub async fn get_task_responses(&self, task_id: U256) -> Result<Vec<TaskResponse>> {
-        let responses = self.coordinator.getResponses(task_id).call().await?;
-        Ok(responses._0)
-    }
-
-    /// Returns the validation responses to a given task request.
-    pub async fn get_task_validations(&self, task_id: U256) -> Result<Vec<TaskValidation>> {
-        let responses = self.coordinator.getValidations(task_id).call().await?;
-        Ok(responses._0)
-    }
-
     /// Responds to a generation request with the response, metadata, and a valid nonce.
     pub async fn respond_generation(
         &self,
@@ -82,14 +60,6 @@ impl DriaOracle {
         let req = self.coordinator.validate(task_id, nonce, scores, metadata);
         let tx = self.send_with_gas_hikes(req).await?;
         self.wait_for_tx(tx).await
-    }
-
-    /// Subscribes to events & processes tasks.
-    #[inline]
-    pub async fn subscribe_to_tasks(
-        &self,
-    ) -> Result<EventPoller<DriaOracleTransport, StatusUpdate>> {
-        Ok(self.coordinator.StatusUpdate_filter().watch().await?)
     }
 
     /// Get previous tasks within the range of blocks.
@@ -127,13 +97,6 @@ impl DriaOracle {
         let validations = self.coordinator.getValidations(task_id).call().await?;
 
         Ok((request, responses, validations))
-    }
-
-    /// Returns the next task id.
-    #[inline]
-    pub async fn get_next_task_id(&self) -> Result<U256> {
-        let task_id = self.coordinator.nextTaskId().call().await?;
-        Ok(task_id._0)
     }
 
     /// Get fee details for a given request setting.

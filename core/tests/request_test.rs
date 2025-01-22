@@ -41,7 +41,7 @@ async fn test_request() -> Result<()> {
     let _ = token.deposit().value(parse_ether("100")?).send().await?;
 
     // request a task, and see it in the coordinator
-    let task_id = node.get_next_task_id().await?;
+    let task_id = node.coordinator.nextTaskId().call().await?._0;
     requester
         .request_task(&input, models, difficulty, num_gens, num_vals, protocol)
         .await?;
