@@ -41,7 +41,7 @@ impl crate::DriaOracle {
 
         // check current allowance
         let allowance = self
-            .allowance(self.address(), self.addresses.coordinator)
+            .allowance(self.address(), *self.coordinator.address())
             .await?
             .amount;
         // make sure we have enough allowance
@@ -52,7 +52,7 @@ impl crate::DriaOracle {
                 format_ether(approval_amount)
             );
 
-            self.approve(self.addresses.coordinator, approval_amount)
+            self.approve(*self.coordinator.address(), approval_amount)
                 .await?;
             log::info!("Token approval successful.");
         }

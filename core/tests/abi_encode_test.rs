@@ -1,3 +1,5 @@
+#![cfg(feature = "anvil")]
+
 use std::str::FromStr;
 
 use alloy::{
@@ -62,14 +64,11 @@ async fn test_encode_packed() -> Result<()> {
         .await?
         ._0;
 
-    // encode locally
-    let mut local_bytes_vec = Vec::new();
-    some_address.abi_encode_packed_to(&mut local_bytes_vec);
-    some_number.abi_encode_packed_to(&mut local_bytes_vec);
-    some_short.abi_encode_packed_to(&mut local_bytes_vec);
-    some_bool.abi_encode_packed_to(&mut local_bytes_vec);
-    some_bytes.abi_encode_packed_to(&mut local_bytes_vec);
-    let local_bytes = Bytes::from(local_bytes_vec);
+    // encode with alloy
+    type Data = (Address, U256, u32, bool, Bytes);
+    let data = Data::from((some_address, some_number, some_short, some_bool, some_bytes));
+    assert_eq!("(address,uint256,uint32,bool,bytes)", data.sol_name());
+    let local_bytes = Bytes::from(data.abi_encode_packed());
 
     assert_eq!(contract_bytes, local_bytes);
 
@@ -77,7 +76,6 @@ async fn test_encode_packed() -> Result<()> {
 }
 
 #[tokio::test]
-#[ignore = "bug with bytes encoding"]
 async fn test_encode() -> Result<()> {
     let anvil = Anvil::new().try_spawn()?;
     let signer: PrivateKeySigner = anvil.keys()[0].clone().into();
@@ -105,20 +103,15 @@ async fn test_encode() -> Result<()> {
             some_bool,
             some_bytes.clone(),
         )
-        .with_cloned_provider()
         .call()
         .await?
         ._0;
 
     // encode with alloy
-    // let mut encoder = alloy::en ::Encoder::new();
-    let mut local_bytes_vec = Vec::new();
-    local_bytes_vec.extend(some_address.abi_encode());
-    local_bytes_vec.extend(some_number.abi_encode());
-    local_bytes_vec.extend(some_short.abi_encode());
-    local_bytes_vec.extend(some_bool.abi_encode());
-    local_bytes_vec.extend(some_bytes.abi_encode());
-    let local_bytes = Bytes::from(local_bytes_vec);
+    type Data = (Address, U256, u32, bool, Bytes);
+    let data = Data::from((some_address, some_number, some_short, some_bool, some_bytes));
+    assert_eq!("(address,uint256,uint32,bool,bytes)", data.sol_name());
+    let local_bytes = Bytes::from(data.abi_encode_sequence());
 
     assert_eq!(contract_bytes, local_bytes);
 

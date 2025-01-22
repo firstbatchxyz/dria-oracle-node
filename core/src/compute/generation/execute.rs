@@ -52,16 +52,19 @@ pub async fn execute_generation(
                 let history_id = U256::from(chat_request.history_id);
                 // if task id is non-zero, we need the node to get the history
                 // first make sure that next-task-id is larger than the history
-                if history_id >= node.get_next_task_id().await? {
+                if history_id >= node.coordinator.nextTaskId().call().await?._0 {
                     return Err(eyre!(
                         "chat history cant exist as its larger than the latest task id"
                     ));
                 }
 
                 let history_task = node
-                    .get_task_best_response(history_id)
+                    .coordinator
+                    .getBestResponse(history_id)
+                    .call()
                     .await
-                    .wrap_err("could not get chat history task from contract")?;
+                    .wrap_err("could not get chat history task from contract")?
+                    ._0;
 
                 // parse it as chat history output
                 let history_str = parse_downloadable(&history_task.output).await?;
@@ -71,7 +74,7 @@ pub async fn execute_generation(
                     messages
                 } else {
                     // otherwise, we can fallback to fetching input manually and creating a new history on-the-fly
-                    let request = node.get_task_request(history_id).await?;
+                    let request = node.coordinator.requests(history_id).call().await?;
                     let input = parse_downloadable(&request.input).await?;
 
                     // create a new history with the input
@@ -162,11 +165,11 @@ mod tests {
         // cargo test --package dria-oracle --lib --all-features -- compute::generation::execute::tests::test_raw_workflow --exact --show-output --ignored
         dotenvy::dotenv().unwrap();
 
-        let contract_result = hex_literal::hex!("7b2261727765617665223a22396e52546d4e6742703758384650714968794430546f65447259687579414f345f507342476638566c6e73227d");
+        let contract_result = hex_literal::hex!("7b2261727765617665223a223658797a572d71666e7670756b787344535a444b2d4f514a6e715a686b62703044624e4e6649696c7a706f227d");
         let request = GenerationRequest::try_parse_bytes(&contract_result.into())
             .await
             .unwrap();
-        let output = execute_generation(&request, Model::GPT4oMini, None)
+        let output = execute_generation(&request, Model::GPT4o, None)
             .await
             .unwrap();
 

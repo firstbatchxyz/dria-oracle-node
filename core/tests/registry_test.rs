@@ -1,6 +1,5 @@
 #![cfg(feature = "anvil")]
 
-use alloy::providers::Provider;
 use dria_oracle::{DriaOracle, DriaOracleConfig};
 use dria_oracle_contracts::OracleKind;
 use eyre::Result;
@@ -17,13 +16,14 @@ async fn test_registry() -> Result<()> {
 
     let config = DriaOracleConfig::new_from_env()?;
     let node = DriaOracle::new(config).await?;
-    assert!(node.provider.get_block_number().await? > 1);
 
     // tries to register if registered, or opposite, to trigger an error
     const KIND: OracleKind = OracleKind::Generator;
     let result = if node.is_registered(KIND).await? {
+        log::info!("Oracle is registered, we will try to register again to get an error.");
         node.register_kind(KIND).await
     } else {
+        log::info!("Oracle is not registered, we will try to unregister again to get an error.");
         node.unregister_kind(KIND).await
     };
     assert!(result.is_err());

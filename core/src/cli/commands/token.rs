@@ -20,7 +20,7 @@ impl DriaOracle {
     /// Show the amount of claimable rewards.
     pub(in crate::cli) async fn display_rewards(&self) -> Result<()> {
         let allowance = self
-            .allowance(self.addresses.coordinator, self.address())
+            .allowance(*self.coordinator.address(), self.address())
             .await?;
 
         log::info!("Claimable rewards:");
@@ -36,7 +36,7 @@ impl DriaOracle {
     pub(in crate::cli) async fn claim_rewards(&self) -> Result<()> {
         // get allowance
         let allowance = self
-            .allowance(self.addresses.coordinator, self.address())
+            .allowance(*self.coordinator.address(), self.address())
             .await?;
 
         // check if there are rewards to claim
@@ -44,8 +44,12 @@ impl DriaOracle {
             log::warn!("No rewards to claim.");
         } else {
             // transfer rewards
-            self.transfer_from(self.addresses.coordinator, self.address(), allowance.amount)
-                .await?;
+            self.transfer_from(
+                *self.coordinator.address(),
+                self.address(),
+                allowance.amount,
+            )
+            .await?;
             log::info!("Rewards claimed: {}.", allowance);
         }
 

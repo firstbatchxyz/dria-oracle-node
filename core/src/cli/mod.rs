@@ -10,6 +10,8 @@ use commands::Commands;
 mod parsers;
 use parsers::*;
 
+const DEFAULT_TX_TIMEOUT_SECS: u64 = 160;
+
 #[derive(clap::Parser)]
 #[command(version, about, long_about = None)]
 #[command(propagate_version = true)]
@@ -38,7 +40,7 @@ impl Cli {
     }
 
     pub fn read_tx_timeout() -> Result<u64> {
-        let timeout = env::var("TX_TIMEOUT_SECS").unwrap_or("100".to_string());
+        let timeout = env::var("TX_TIMEOUT_SECS").unwrap_or(DEFAULT_TX_TIMEOUT_SECS.to_string());
         timeout.parse().map_err(Into::into)
     }
 }

@@ -59,7 +59,9 @@ impl DriaOracle {
             // subscribe to new tasks
             log::info!("Subscribing to task events");
             let mut event_stream = self
-                .subscribe_to_tasks()
+                .coordinator
+                .StatusUpdate_filter()
+                .watch()
                 .await
                 .wrap_err("could not subscribe to tasks")?
                 .into_stream();

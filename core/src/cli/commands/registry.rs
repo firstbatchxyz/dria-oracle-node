@@ -22,7 +22,7 @@ impl DriaOracle {
         // calculate the required approval for registration
         let stake = self.get_registry_stake_amount(kind).await?;
         let allowance = self
-            .allowance(self.address(), self.addresses.registry)
+            .allowance(self.address(), *self.registry.address())
             .await?;
 
         // approve if necessary
@@ -45,7 +45,7 @@ impl DriaOracle {
             }
 
             // approve the difference
-            self.approve(self.addresses.registry, difference).await?;
+            self.approve(*self.registry.address(), difference).await?;
         } else {
             log::info!("Already approved enough tokens.");
         }
@@ -76,13 +76,13 @@ impl DriaOracle {
         // transfer all allowance from registry back to oracle
         // to get back the registrations fee
         let allowance = self
-            .allowance(self.addresses.registry, self.address())
+            .allowance(*self.registry.address(), self.address())
             .await?;
         log::info!(
             "Transferring all allowance ({}) back from registry.",
             allowance
         );
-        self.transfer_from(self.addresses.registry, self.address(), allowance.amount)
+        self.transfer_from(*self.registry.address(), self.address(), allowance.amount)
             .await?;
 
         Ok(())

@@ -1,4 +1,5 @@
-name: DKN L2 Oracle Dev Image (GPT)
+name: Dria Oracle Image on AWS
+
 on:
   push:
     branches: ["master"]

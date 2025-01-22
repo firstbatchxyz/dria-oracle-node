@@ -38,9 +38,9 @@ async fn test_swan() -> Result<()> {
     let node = DriaOracle::new(config).await?;
 
     // setup accounts
-    let requester = node.connect(node.anvil_funded_wallet(None).await?);
-    let mut generator = node.connect(node.anvil_funded_wallet(None).await?);
-    let mut validator = node.connect(node.anvil_funded_wallet(None).await?);
+    let requester = node.connect(node.anvil_new_funded_wallet(None).await?);
+    let mut generator = node.connect(node.anvil_new_funded_wallet(None).await?);
+    let mut validator = node.connect(node.anvil_new_funded_wallet(None).await?);
 
     // buy some WETH for all people
     log::info!("Buying WETH for all accounts");
@@ -48,7 +48,7 @@ async fn test_swan() -> Result<()> {
     for node in [&requester, &generator, &validator] {
         let balance_before = node.get_token_balance(node.address()).await?;
 
-        let token = WETH::new(node.addresses.token, &node.provider);
+        let token = WETH::new(*node.token.address(), &node.provider);
         let call = token.deposit().value(amount);
         let _ = call.send().await?.get_receipt().await?;
 
@@ -76,7 +76,7 @@ async fn test_swan() -> Result<()> {
 
     // approve some tokens for the coordinator from requester
     requester
-        .approve(node.addresses.coordinator, amount)
+        .approve(*node.coordinator.address(), amount)
         .await?;
 
     // make a request with just one generation and validation request
@@ -139,7 +139,7 @@ async fn test_swan() -> Result<()> {
     assert_eq!(event.statusAfter, TaskStatus::Completed as u8);
 
     // get responses
-    let responses = node.get_task_responses(task_id).await?;
+    let responses = node.coordinator.getResponses(task_id).call().await?._0;
     assert_eq!(responses.len(), 1);
     let response = responses.into_iter().next().unwrap();
     println!("Output: {:?}", response.output);
