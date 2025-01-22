@@ -1,12 +1,5 @@
-use crate::node::utils::get_connected_chain;
-
-use super::{DriaOracle, DriaOracleConfig};
 use alloy::contract::CallBuilder;
 use alloy::hex::FromHex;
-
-#[cfg(feature = "anvil")]
-use alloy::providers::ext::AnvilApi;
-
 use alloy::providers::{PendingTransactionBuilder, WalletProvider};
 use alloy::transports::RpcError;
 use alloy::{
@@ -14,6 +7,7 @@ use alloy::{
     primitives::Address,
     providers::{Provider, ProviderBuilder},
 };
+use alloy_chains::Chain;
 use dkn_workflows::{DriaWorkflowsConfig, Model, ModelProvider};
 use dria_oracle_contracts::ERC20::ERC20Instance;
 use dria_oracle_contracts::{
@@ -23,11 +17,11 @@ use dria_oracle_contracts::{
 use eyre::{eyre, Context, Result};
 use std::env;
 
-impl DriaOracle {
-    /// Creates a new oracle node with the given private key and connected to the chain at the given RPC URL.
+impl crate::DriaOracle {
+    /// Creates a new Oracle node with the given private key and connected to the chain at the given RPC URL.
     ///
-    /// The contract addresses are chosen based on the chain id returned from the provider.
-    pub async fn new(config: DriaOracleConfig) -> Result<Self> {
+    /// If `anvil` feature is enabled, the node will connect to an Anvil fork of the chain.
+    pub async fn new(config: crate::DriaOracleConfig) -> Result<Self> {
         #[cfg(not(feature = "anvil"))]
         let provider = ProviderBuilder::new()
             .with_recommended_fillers()
@@ -42,22 +36,15 @@ impl DriaOracle {
                 anvil.fork(config.rpc_url.clone()).port(Self::ANVIL_PORT)
             });
 
-        // also set some balance for the chosen wallet
-        #[cfg(feature = "anvil")]
-        provider
-            .anvil_set_balance(
-                config.wallet.default_signer().address(),
-                alloy::primitives::utils::parse_ether(Self::ANVIL_FUND_ETHER).unwrap(),
-            )
-            .await?;
-
         // fetch the chain id so that we can use the correct addresses
-        let chain = get_connected_chain(&provider).await?;
+        let chain = Chain::from_id(provider.get_chain_id().await?)
+            .named()
+            .ok_or_else(|| eyre!("expected a named chain"))?;
 
         #[cfg(not(feature = "anvil"))]
-        log::info!("Connected to chain: {}", chain);
+        log::info!("Connected to {} network", chain);
         #[cfg(feature = "anvil")]
-        log::info!("Connected to Anvil with forked chain: {}", chain);
+        log::info!("Connected to Anvil forked from {} network", chain);
 
         // get coordinator address from static list or the environment
         // (address within env can have 0x at the start, or not, does not matter)
@@ -100,17 +87,17 @@ impl DriaOracle {
         Ok(node)
     }
 
-    /// Creates a new node with the given wallet.
-    ///
-    /// - Provider is cloned and its wallet is mutated.
-    /// - Config is cloned and its wallet & address are updated.
+    /// Creates a new node that uses the given wallet as its signer.
     pub fn connect(&self, wallet: EthereumWallet) -> Self {
+        // first, clone the provider and set the wallet
         let mut provider = self.provider.clone();
         *provider.wallet_mut() = wallet.clone();
 
+        // then instantiate the contract instances with the new provider
         let token = ERC20Instance::new(*self.token.address(), provider.clone());
         let coordinator = OracleCoordinator::new(*self.coordinator.address(), provider.clone());
         let registry = OracleRegistry::new(*self.registry.address(), provider.clone());
+
         Self {
             provider,
             config: self.config.clone().with_wallet(wallet),
@@ -122,6 +109,10 @@ impl DriaOracle {
         }
     }
 
+    /// Given the kinds and models, prepares the configurations for the oracle.
+    ///
+    /// - If `kinds` is empty, it will check the registrations and use them as kinds.
+    /// - If `models` is empty, gives an error.
     pub async fn prepare_oracle(
         &mut self,
         mut kinds: Vec<OracleKind>,
@@ -150,9 +141,6 @@ impl DriaOracle {
 
         // prepare model config & check services
         let mut model_config = DriaWorkflowsConfig::new(models);
-        if model_config.models.is_empty() {
-            return Err(eyre!("No models provided."))?;
-        }
         let ollama_config = model_config.ollama.clone();
         model_config = model_config.with_ollama_config(
             ollama_config
@@ -160,6 +148,9 @@ impl DriaOracle {
                 .with_timeout(std::time::Duration::from_secs(150)),
         );
         model_config.check_services().await?;
+        if model_config.models.is_empty() {
+            return Err(eyre!("No models provided."))?;
+        }
 
         // validator-specific checks here
         if kinds.contains(&OracleKind::Validator) {
@@ -183,7 +174,8 @@ impl DriaOracle {
         Ok(())
     }
 
-    /// Returns the native token balance of a given address.
+    /// Returns the native token (ETH) balance of a given address.
+    #[inline]
     pub async fn get_native_balance(&self, address: Address) -> Result<TokenBalance> {
         let balance = self.provider.get_balance(address).await?;
         Ok(TokenBalance::new(balance, "ETH", None))
@@ -271,19 +263,5 @@ impl DriaOracle {
 
         // all attempts failed
         Err(eyre!("Failed all attempts send tx due to underpriced gas."))
-    }
-}
-
-impl core::fmt::Display for DriaOracle {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "Dria Oracle Node v{}\nOracle Address: {}\nRPC URL: {}\nCoordinator: {}\nTx timeout: {}s",
-            env!("CARGO_PKG_VERSION"),
-            self.address(),
-            self.config.rpc_url,
-            self.coordinator.address(),
-            self.config.tx_timeout.map(|t| t.as_secs()).unwrap_or_default()
-        )
     }
 }

@@ -1,23 +1,20 @@
+use alloy::network::Ethereum;
+use dkn_workflows::DriaWorkflowsConfig;
+use dria_oracle_contracts::OracleKind;
+use dria_oracle_contracts::{OracleCoordinator, OracleRegistry, ERC20};
+
 mod coordinator;
 mod core;
 mod registry;
 mod token;
 
 mod types;
-use alloy::network::Ethereum;
 use types::*;
-
-mod utils;
 
 #[cfg(feature = "anvil")]
 mod anvil;
 
 use super::DriaOracleConfig;
-
-use dkn_workflows::DriaWorkflowsConfig;
-use dria_oracle_contracts::OracleKind;
-use dria_oracle_contracts::{OracleCoordinator, OracleRegistry, ERC20};
-
 pub struct DriaOracle {
     pub config: DriaOracleConfig,
     /// Contract addresses for the oracle, respects the connected chain.
@@ -36,4 +33,18 @@ pub struct DriaOracle {
     pub kinds: Vec<OracleKind>,
     /// Workflows config, defines the available models & services.
     pub workflows: DriaWorkflowsConfig,
+}
+
+impl std::fmt::Display for DriaOracle {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+          f,
+          "Dria Oracle Node v{}\nOracle Address: {}\nRPC URL: {}\nCoordinator: {}\nTx timeout: {}s",
+          env!("CARGO_PKG_VERSION"),
+          self.address(),
+          self.config.rpc_url,
+          self.coordinator.address(),
+          self.config.tx_timeout.map(|t| t.as_secs()).unwrap_or_default()
+      )
+    }
 }

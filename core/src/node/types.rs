@@ -12,8 +12,7 @@ use alloy::{
 };
 
 #[cfg(not(feature = "anvil"))]
-pub type DriaOracleProviderTransport =
-    alloy::transports::http::Http<alloy::transports::http::Client>;
+pub type DriaOracleTransport = alloy::transports::http::Http<alloy::transports::http::Client>;
 
 #[cfg(feature = "anvil")]
 pub type DriaOracleTransport = alloy::transports::BoxTransport;
