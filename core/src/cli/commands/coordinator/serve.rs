@@ -1,6 +1,8 @@
 use crate::{compute::handle_request, DriaOracle};
 use alloy::{eips::BlockNumberOrTag, primitives::U256};
-use dria_oracle_contracts::{bytes_to_string, OracleCoordinator::StatusUpdate, TaskStatus};
+use dria_oracle_contracts::{
+    bytes32_to_string, bytes_to_string, OracleCoordinator::StatusUpdate, TaskStatus,
+};
 use eyre::Result;
 
 impl DriaOracle {
@@ -9,11 +11,12 @@ impl DriaOracle {
         let request = self.coordinator.requests(task_id).call().await?;
 
         log::info!(
-            "Request Information:\nRequester: {}\nStatus:    {}\nInput:     {}\nModels:    {}",
+            "Request Information:\nRequester: {}\nStatus:    {}\nInput:     {}\nModels:    {}\nProtocol:   {}",
             request.requester,
             TaskStatus::try_from(request.status)?,
             bytes_to_string(&request.input)?,
-            bytes_to_string(&request.models)?
+            bytes_to_string(&request.models)?,
+            bytes32_to_string(&request.protocol)?
         );
 
         let status = TaskStatus::try_from(request.status)?;

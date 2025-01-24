@@ -1,5 +1,5 @@
 use alloy::{eips::BlockNumberOrTag, primitives::U256};
-use dria_oracle_contracts::{bytes_to_string, TaskStatus};
+use dria_oracle_contracts::{bytes32_to_string, bytes_to_string, TaskStatus};
 use eyre::Result;
 
 impl crate::DriaOracle {
@@ -42,12 +42,13 @@ impl crate::DriaOracle {
         let (request, responses, validations) = self.get_task(task_id).await?;
 
         log::info!(
-            "Request Information:\nRequester: {}\nStatus:    {}\nInput:     {}\nModels:    {}",
-            request.requester,
-            TaskStatus::try_from(request.status)?,
-            bytes_to_string(&request.input)?,
-            bytes_to_string(&request.models)?
-        );
+          "Request Information:\nRequester: {}\nStatus:    {}\nInput:     {}\nModels:    {}\nProtocol:   {}",
+          request.requester,
+          TaskStatus::try_from(request.status)?,
+          bytes_to_string(&request.input)?,
+          bytes_to_string(&request.models)?,
+          bytes32_to_string(&request.protocol)?
+      );
 
         log::info!("Responses:");
         if responses._0.is_empty() {
