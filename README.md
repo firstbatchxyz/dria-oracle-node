@@ -104,7 +104,13 @@ You will need to have some tokens in your balance, which will be approved automa
 > Using WETH, we can do this quite easily via `cast`:
 >
 > ```sh
-> cast send 0x4200000000000000000000000000000000000006 "deposit()()" --rpc-url https://mainnet.base.org --private-key $SECRET_KEY --value $VALUE
+> cast send 0x4200000000000000000000000000000000000006 "deposit()()" --rpc-url https://mainnet.base.org --private-key $SECRET_KEY --value $AMOUNT
+> ```
+>
+> You can also convert back to ETH using:
+>
+> ```sh
+> cast send 0x4200000000000000000000000000000000000006 "withdraw(uint256)()" $AMOUNT --rpc-url https://mainnet.base.org --private-key $SECRET_KEY
 > ```
 
 ### Launching the Node

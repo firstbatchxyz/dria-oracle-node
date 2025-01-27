@@ -48,7 +48,7 @@ pub fn contract_error_report(error: Error) -> ErrReport {
                 {
                     coordinator_error.into()
                 } else {
-                    eyre!("Unhandled error response: {:#?}", error)
+                    eyre!("Unhandled error response: {:#?}", payload)
                 }
             } else {
                 eyre!("Unknown transport error: {:#?}", error)
