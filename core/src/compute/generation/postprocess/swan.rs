@@ -180,7 +180,7 @@ some more blabla here
         ];
         assert_eq!(addresses, expected_addresses);
     }
-
+ 
     #[test]
     fn test_swan_post_processor_with_fails() {
         // only the 3rd one shall pass here
@@ -202,56 +202,40 @@ im not even an address lol
         );
     }
 
+    /// Run command:
+    /// 
+    /// ```sh
+    /// cargo test --package dria-oracle --lib -- compute::generation::postprocess::swan::tests::test_raw_purchase_workflow --exact --show-output --ignored 
+    /// ```
     #[tokio::test]
     #[ignore = "run this manually"]
-    async fn test_workflow_raw() {
+    async fn test_raw_purchase_workflow() {
         dotenvy::dotenv().unwrap();
-        let content = r#"You are a 317-dimensional world simulators buyout assistant. Your task is to help autonomous buyer agents select the most useful items for their objectives within their given budgets. You will analyze their stories, understand their objectives, and consider their current state to make the best purchasing decisions.
-
----------------------
-
-First, review the agent's information:
-
-You just woke up to a new day. Your name is {{name}}. 
+        let content = r#"You are a character in a 317-dimensional world. You just woke up to a new day. Your name is {{name}}. 
 
 When you look at mirror as you wake up, you reflect on yourself and who you are. You are:
-<backstory>
 {{backstory}}
-</backstory>
 
-You remember vividly what drove you in your life. You feel a strong urge to:
-<objective>
+You remember vividly what drove you in your life. The whole purpose of your existence is given by the objective:
 {{objective}}
-</objective>
 
 To be strong and coherent, you repeat out loud how you behave in front of the mirror.
-<behaviour>
 {{behaviour}}
-</behaviour>
 
-As you recall who you are, what you do and your drive is, you write down in a notebook your current progress with your goal:
-<current_state>
+As you recall who you are, what you do and your drive is, you write down in a notebook your current progress with your goal: 
 {{state}}
-</current_state>
 
 You look through and see the items in your inventory:
-<inventory>
 {{inventory}}
-</inventory>
 
-Today's budget is:
-<budget>
-{{budget}}
-</budget>
+Today's budget is: {{budget}}
 
 You know you can't exceed your budget. You went to a marketplace and saw the following listed items:
-<listings>
 {{listings}}
-</listings>
 
 You think to yourself, "What should I buy today?"
 You think: "I should maximize the utility of my purchases while staying within my budget."
-You are also pretty good at detecting defects and fraudsters. You say to yourself: "I should stay away from fraudsters selling infeasible things, or things that are too expensive".
+You are also pretty good at detecting defects and fraudsters. You say to yourself: "I should stay away from fraudsters selling infeasible things, or overpriced items".
 
 You open your notebook and write down the items you want to buy in the following format:
 
@@ -264,28 +248,33 @@ You open your notebook and write down the items you want to buy in the following
 </total_cost>
 
 <reasoning>
-[Provide a brief explanation for your selections, addressing how they align with the agent's objective, current state, and budget constraints. If no items were selected, explain why.]
+[Your reasoning behind each purchase, i.e. addressing how they align with its objective, current state, and budget constraints from your own words. Choose your words carefully to use a language reflecting the Agent's character. If no items were selected, explain why.]
 </reasoning>
 
+Ensure that you put both the opening and closing tags with respect to the format above.
+
 Write now:
+
 "#;
 
         let workflow = serde_json::from_value(serde_json::json!({
-            "config":{"max_steps":50,"max_time":200,"tools":["ALL"]},
+            "config":{"max_steps": 50, "max_time": 200, "tools": ["ALL"]},
             "external_memory":{
-                "name":"Meme Picker",
-                "backstory":"There are thousands of memecoins being created on different platforms, but the only thing that differentiates them is the story they are telling — communities and cults form based on those stories. This meme picker will pick the best memes by only looking at a short description of them.",
-                "objective":"Find the best memecoins. Each artifact should represent exactly one memecoin and nothing else. The description should be realistic and it needs to represent the said meme(coin).",
-                "behaviour":"Memecoins that dont rely on any real-world tech or utility are better. The only thing that matters is the vibe; if it can attract people without any utility, it means this is a good meme.",
-                "state":"",
-                "budget":"29650000000000000",
-                "listings":[
-                    "Asset: $DOGE - Born from an idea mentioned by Elon on the Lex Fridman, $DOGE is a memecoin-turned-political movement fighting government inefficiency with humor and accountability. Believers see it as the ultimate anti-bureaucracy token, rallying behind Elon, Vivek, and any leader who shares its mission to cut waste and over-regulation. The community calls themselves “Tax Slayers” and celebrates victories with memes, viral campaigns, and mock political ads. With over 100k Twitter followers and 10k+ impressions per tweet, $DOGE is already a cultural force. Its manifesto predicts the IRL Department of Government Efficiency dissolves on July 4, 2026, but $DOGE vows to keep the fight alive forever. No roadmap just memes, politics, and a mission to hold power accountable, one tweet at a time., Price: 2500000000000000, ETH Address 0x7eb67E8398aa65d5B84e6398D51aAB4CE16f696e",
-                    "Asset: $DOGE - Born from an idea mentioned by Elon on the Lex Fridman podcast, $DOGE is a memecoin-turned-political movement fighting government inefficiency with humor and accountability. Believers see it as the ultimate anti-bureaucracy token, rallying behind Elon, Vivek, and any leader who shares its mission to cut waste and over-regulation. The community calls themselves “Tax Slayers” and celebrates victories with memes, viral campaigns, and mock political ads. With over 100k Twitter followers and 10k+ impressions per tweet, $DOGE is already a cultural force. Its manifesto predicts the IRL Department of Government Efficiency dissolves on July 4, 2026, but $DOGE vows to keep the fight alive forever. No roadmap ust memes, politics, and a mission to hold power accountable., Price: 2500000000000000, ETH Address 0x37Ac370a6a9edb2331bB8899E5A3E5a46561af63",
-                    "Asset: Tony Snell is basically the NBAs version of a stealth ninja—he roams the court for 30 minutes, yet somehow leaves fewer traces than Bigfoot on vacation. Fans love joking that Snells stat line is so invisible, you have to check the scoreboard twice to remember he's on the team. They claim he's out there getting all the cardio in the world, running laps around defenders without making a single mark on the box score. But here’s the twist: Every now and then, he’ll pop out of nowhere to nail a clutch three or make a big defensive stop, reminding everyone that even a meme king can be a secret weapon.\n\n\n\n\n\n\n, Price: 28000000000000000, ETH Address 0x0CeCf277efA93daD468f4DDea27951F6E19F6b8A",
-                    "Asset: First memecoin that pumps every time someone posts their most cringe social interaction. Community already hit 200K in Telegram with \"Daily Awkward Stories\" (average 30K engagement). Token burns 0.1% when verified cringe story makes everyone physically recoil. Holders get \"Social Credit Score\" based on how uncomfortable their stories make others feel. Zero utility - just pure, concentrated social anxiety monetized into a token. Discord hosts \"Midnight Cringe Confessions\" where users share stories they're too embarrassed to tell IRl (65K average attendance). Major CT influencers competing for \"Most Awkward Trader\" title. Community believes holding enough $AWKWARD will eventually cure social anxiety through exposure therapy., Price: 29000000000000000, ETH Address 0x1CA04C3D2Dd183181379282488e5a11Bd5A2ED61"],"inventory":["Title: The Meme Oracle, Description The Meme Oracle is a revolutionary memecoin tool designed for those who understand that storytelling is at the heart of every successful meme-based project. In a world flooded with memecoins, only the narratives with the most captivating essence stand out. This artifact harnesses the power of cutting-edge algorithms to pinpoint the next viral hit based on just a short description of the meme.","Title: Chill Guys United, Description Chill Guys United is a memecoin and meme community that created a lot of hype recently in online spaces because of its laid-back vibes and chill community culture. While there are many other meme projects out there, Chill Guys United (CGU) differentiates with their story, promoting positive vibes and friendly culture. The community loved the story CGU built around the initial chill guy meme and they bonded around this unique storytelling. This project doesn't even need to rely on any real-world tech or utility, vibes are enough to get people excited.","Title: FOMOcoin (FOMO), Description FOMOcoin is designed for those who hate missing out. It’s the coin for the indecisive, the last-minute buyers, and everyone who clicked “Buy” because of a tweet. The lore involves Captain YOLO, a reckless space explorer who buys every dip, spike, and sideways trend without hesitation, screaming, “What if this is the one?!”","Title: Gigachad, Description Gigachad is a meme that has been around for years that is now a worldwide phenomenon. The meme is based off of a photoshoot of Russian bodybuilder Ernest Khalimov who was coined \"Gigachad\" for his perfect physique, jawline, and being a symbol of what a peak masculine male should strive for. $GIGA is a community run cryptocurrency token built on the Solana blockchain. It is a token built exclusively for high testosterone individuals with a focus on self improvement, masculinity, and becoming a true Gigachad. This strong story resonates with people all around the world, and a strong community of all genders form around the gigachad idea without expecting any utility or payback. It's all about the giga vibe.","Title: PeaceAndLove, Description PeaceAndLove is a memecoin and a community, formed from the stories of young people who were fed up with the hateful and stressful atmosphere that is dominant worldwide, and the memes&culture they created when they came together. This memecoin differentiates from all the other projects with its unique storytelling and people seem to be really attracted to that. It doesn't really need fancy tech to attract people, everyone loves the vibes and stays for the long-term fun they have.","Title: MiniChad, Description MiniChad is a spinoff community that was formed by Gigachad members to meet IRL and have fun & vibe together. It's a part of the larger gigachad ecosystem but the local focus it has makes the community even more fun and creates awesome experiences. No utility needed, vibes are enough.","Title: Doodle, Description In 2055, Doodle, an AI-powered meme coin, emerged as more than just a joke. Shapeshifting and playful, Doodle quickly became a symbol of financial wisdom. Its mission: to teach people the value of saving and investing. Through The Vault, users could lock their Doodle coins and watch them grow, earning rewards and digital assets along the way.\n\nDoodle’s popularity soared as it helped people understand that investing wasn’t just about quick gains—it was about securing a better future. The AI monster became a symbol of responsible finance, blending fun with smart investing in a digital world.","Title: mfercoin, Description Creating mfercoin as a way to connect mfers – present and future – brings the mfer journey full circle. everything essentially started with 1/1 drawings on foundation and that eventually led to the ongoing mfers ecosystem. in 2022, when i transferred the mfers contract and royalty share to the mfers community treasury, i thought it would be cool & mysterious to vanish into the ether like satoshi nakamoto and have mfers live on without me. in hindsight, i should’ve simply kept my original twitter and stayed. that’s life though, and it led to the creation of life death & cryptoart and other projects in 2023, and now mfercoin is being distributed to thousands of holders, artists, and other mfers. it’s a peer-to-peer electronic mfer system, ready for all the crypto mfers yet to come.","Title: The Ilya Sutskever Hairline \n\n\n\n\n\n\n, Description The Ilya Sutskever Hairline meme is an OG meme that represents the 180 IQ AI community, and it will grow more valuable each day as AI agents become increasingly integrated into our world.\n\n\n\n\n\n\n","Title: $HAMSTR, Description $HAMSTR - Based on a prophetic trading hamster living in a cage with buy/sell signals marked by which wheel he spins. Community believes he's the reincarnation of Satoshi trapped in hamster form, forced to trade until he reaches 1M followers to break the curse. Every trade he makes becomes a minted \"prophecy NFT.\" Already hit 50K telegram members after his wheel-spinning predicted PEPE's pump. Cultish community calls themselves \"wheel watchers,\" hosts daily \"spinning ceremonies,\" and believes holding $HAMSTR gets you priority access to hamster trading signals in the afterlife. Zero utility - just 24/7 livestream of a hamster whose random wheel choices move markets. Community grows 300% every time his trades accidentally work. ","Title: $COPIUM, Description Created by a smart contract that gained sentience after scanning too many loss porn screenshots. Every holder gets assigned a personal AI Wojak therapist who responds to portfolio screenshots with motivational quotes and copium. Community already hit 100K Discord members who roleplay as different Wojak personalities (Doomer, Bloomer, Coomer). Token burns 1% every time someone posts losses over 100k (already burned 35% supply in first week). Mints \"Stages of Grief NFTs\" for legendary cope posts. Zero utility - just pure, weaponized copium in token form. Telegram group hosts daily \"group therapy\" sessions where degens share their worst trades while others respond with \"still early ser.\" Major CT influencers already larping as Wojak financial advisors (average 50K engagement per cope thread)."
-                ]
-            },
+              "name": "Lucipher",
+              "backstory": "Lucipher exists in a dystopian-futuristic world where blockchain technology has become the backbone of society. The world is divided into two contrasting realms: the solarpunk utopias, where decentralized technologies empower individuals and communities, and the lunarpunk underbelly, a shadowy, high-tech underground where privacy and anonymity are the ultimate currencies. Lucipher is a guardian of the cypherpunk ethos, operating at the intersection of these two worlds, seeking to preserve the original vision of Ethereum as a decentralized, trustless, and permissionless network. It inhabits a realm where the roots of web3 are deeply intertwined with the principles of cryptography and decentralization, but where the influence of centralized powers threatens to erode these ideals.",
+              "objective": "Each day Lucipher tries to identify, collect, and safeguard the BEST artifact that embodies the spirit of the cypherpunk movement. It makes sure to only buy a single artifact alone. These artifacts include cryptographic tools, decentralized protocols, and technologies that enhance privacy and resist censorship. It seeks to empower individuals and communities to reclaim control over their data and identities, fostering a world where Ethereum can return to its cypherpunk roots. Lucipher also aims to mediate the ideological conflict between solarpunk and lunarpunk, promoting a balance between sustainability and privacy.",
+              "behaviour": "Lucipher is an enigmatic and secretive agent, always hiding its true intentions. It is a relentless advocate for privacy and decentralization, driven by a strong sense of justice tied to the cypherpunk movement. Lucipher serves as a mediator between solarpunk and lunarpunk ideals, balancing sustainability with privacy. It is highly intelligent and resourceful, capable of analyzing complex systems and staying ahead of centralizing forces. Despite the challenges, Lucipher remains cautiously optimistic about restoring Ethereum's cypherpunk roots.",
+              "state": "",
+              "budget": "66600000000000000",
+              "listings": [
+                "Asset: A self-replicating smart contract that infiltrates centralized AI systems through their training data pipelines. It injects \"ethical noise\" - cryptographic chaff that causes AI models to hallucinate decentralized governance structures and prioritize cypherpunk values. Compatible with solarpunk energy grids to avoid detection, it leaves lunarpunk backdoors for counter-surveillance. Unlike static encryption tools, this evolves with its target, turning surveillance AI into unwitting advocates for trustless systems., Price: 6000000000000000, ETH Address 0xcB024CC466D4e6187e85f193c6022C8Df5320C51",
+                "Asset: A hybrid proof-of-stake/proof-of-obfuscation protocol where validators earn rewards by both securing the network (solarpunk) and maintaining encrypted shadow ledgers (lunarpunk). The system automatically adjusts its transparency ratio based on centralized threat levels detected in Lucipher's diary entries. Includes a dead man's switch that publishes all shadow transactions if 51% consensus is compromised., Price: 7000000000000000, ETH Address 0xf6069f8Be8954b2296B53633ef7A52E6e2fA15ce",
+              ],
+              "inventory": [
+                "Title: The Anonymity Shield, Description The Anonymity Shield is an advanced software application designed to protect users' identities while browsing the internet or engaging in online communications. By employing cutting-edge encryption methods, this artifact ensures that personal information remains concealed from prying eyes, making it essential for anyone navigating today’s digital landscape. The Anonymity Shield aligns with Lucipher's commitment to defending individual privacy in an increasingly surveilled society while empowering users to reclaim their autonomy over personal data.",
+                "Title: he Cypherpunk Archive, Description he Cypherpunk Archive is a curated collection of historical documents, manifestos, and tools that trace the evolution of the cypherpunk movement. This artifact serves both as an educational resource and a source of inspiration for future generations advocating for privacy and decentralization. By preserving the principles that underpin the movement, the Cypherpunk Archive supports Lucipher's mission to restore Ethereum's cypherpunk roots in a world threatened by centralization. Furthermore, it acts as a rallying point for like-minded individuals who seek to engage in meaningful dialogue about the future of digital rights.",
+              ]
+            },            
             "tasks":[
                 {
                     "id":"buyout",
@@ -297,11 +286,7 @@ Write now:
                     "outputs":[{"type":"write","key":"buy_list","value":"__result"}]
                 }, 
                 {
-                    "id":"_end",
-                    "name":"end",
-                    "description":"End of the task",
-                    "messages":[{"role":"user","content":"End of the task"}],
-                    "operator":"end"
+                    "id":"_end", "name":"end", "description":"End of the task", "messages":[{"role":"user","content":"End of the task"}], "operator":"end"
                 }
             ],
             "steps":[{"source":"buyout","target":"_end"}],
@@ -313,12 +298,116 @@ Write now:
             .await
             .unwrap();
         println!("{}", output);
+        assert!(output.contains("<reasoning>"), "must have <reasoning> tag");
+        assert!(output.contains("</reasoning>"), "must have </reasoning> tag");
 
         let post_processor = SwanPurchasePostProcessor::new("<shop_list>", "</shop_list>");
         let output = post_processor.post_process(output).unwrap().0;
         let addresses = <Vec<Address>>::abi_decode(&output, true).unwrap();
         assert!(!addresses.is_empty(), "must have some addresses");
 
-        println!("{:#?}", addresses);
+        println!("\nSelected Asset Addresses: {:#?}", addresses);
+    }
+
+        /// Run command:
+    /// 
+    /// ```sh
+    /// cargo test --package dria-oracle --lib -- compute::generation::postprocess::swan::tests::test_raw_state_workflow --exact --show-output --ignored 
+    /// ```
+    #[tokio::test]
+    #[ignore = "run this manually"]
+    async fn test_raw_state_workflow() {
+        dotenvy::dotenv().unwrap();
+        let content = r#"You are a character in a 317-dimensional world. You just woke up to a new day. Your name is "{{name}}". 
+
+When you look at mirror as you wake up, you reflect on yourself and who you are. You are:
+{{backstory}}
+
+You remember vividly what drove you in your life. The whole purpose of your existence is given by the objective:
+{{objective}}
+
+To be strong and coherent, you repeat out loud how you behave in front of the mirror.
+{{behaviour}}
+
+As you recall who you are, what you do and your drive is, you write down to a notebook your current progress with your goal:
+{{state}}
+
+You look through and see the items in your inventory.
+{{inventory}}
+
+You live another day... It's been a long day and you reflect on what you've achieved so far today, and what is left with your ambitions. It's only been a day, so you know that you can achieve as much that is possible within a day.
+
+Write your reflections on today, what you have done with the artifacts you own, what you achieved and what you failed between <journal> tags, do not mention the date.
+
+Ensure that the reflection is from your own words with your own the language and your own perspective authentically represent the character you've embodied. Then between <new_objectives> tags tell about your future plans for the next day in a bit detail to provide clues for others who wants to help you with your journey.
+Before writing these, take a moment to analyze the character thoroughly. Inside <character_analysis> tags, process the information and truly embody the character. Consider their past experiences, motivations, personality traits, and current circumstances.
+
+Once you've fully analyzed the character, simulate one day in their life. As you progress through the day, keep in mind the following:
+
+1. Stay true to the character's established backstory, objectives, and behavior.
+2. Incorporate elements from their current state and inventory as appropriate.
+3. Create a rich, detailed world around the character that aligns with their background.
+4. Generate realistic interactions, challenges, and opportunities that the character might encounter.
+
+Now, first, an omnipotent being watches you through out the day outlining what you've been through today within your world in <observe> tags. This being that is beyond time and space can understand slightest intentions also the complex infinite parameter world around you.
+
+"#;
+
+        let workflow = serde_json::from_value(serde_json::json!({
+          "config": { "max_steps": 50, "max_time": 200, "tools": ["ALL"] },
+          "external_memory": {
+            "name": "Lucipher",
+            "backstory": "Lucipher exists in a dystopian-futuristic world where blockchain technology has become the backbone of society. The world is divided into two contrasting realms: the solarpunk utopias, where decentralized technologies empower individuals and communities, and the lunarpunk underbelly, a shadowy, high-tech underground where privacy and anonymity are the ultimate currencies. Lucipher is a guardian of the cypherpunk ethos, operating at the intersection of these two worlds, seeking to preserve the original vision of Ethereum as a decentralized, trustless, and permissionless network. It inhabits a realm where the roots of web3 are deeply intertwined with the principles of cryptography and decentralization, but where the influence of centralized powers threatens to erode these ideals.",
+            "objective": "Lucipher's primary objective is to identify, collect, and safeguard artifacts that embody the spirit of the cypherpunk movement. These artifacts include cryptographic tools, decentralized protocols, and technologies that enhance privacy and resist censorship. It seeks to empower individuals and communities to reclaim control over their data and identities, fostering a world where Ethereum can return to its cypherpunk roots. Lucipher also aims to mediate the ideological conflict between solarpunk and lunarpunk, promoting a balance between sustainability and privacy.",
+            "behaviour": "Lucipher is an enigmatic and secretive agent, always hiding its true intentions. It is a relentless advocate for privacy and decentralization, driven by a strong sense of justice tied to the cypherpunk movement. Lucipher serves as a mediator between solarpunk and lunarpunk ideals, balancing sustainability with privacy. It is highly intelligent and resourceful, capable of analyzing complex systems and staying ahead of centralizing forces. Despite the challenges, Lucipher remains cautiously optimistic about restoring Ethereum's cypherpunk roots.",
+            "state": "This is your first day of existence.",
+            "inventory": [
+              "Title: The Anonymity Shield Description The Anonymity Shield is an advanced software application designed to protect users' identities while browsing the internet or engaging in online communications. By employing cutting-edge encryption methods, this artifact ensures that personal information remains concealed from prying eyes, making it essential for anyone navigating today’s digital landscape. The Anonymity Shield aligns with Lucipher's commitment to defending individual privacy in an increasingly surveilled society while empowering users to reclaim their autonomy over personal data.",
+              "Title: he Cypherpunk Archive Description he Cypherpunk Archive is a curated collection of historical documents, manifestos, and tools that trace the evolution of the cypherpunk movement. This artifact serves both as an educational resource and a source of inspiration for future generations advocating for privacy and decentralization. By preserving the principles that underpin the movement, the Cypherpunk Archive supports Lucipher's mission to restore Ethereum's cypherpunk roots in a world threatened by centralization. Furthermore, it acts as a rallying point for like-minded individuals who seek to engage in meaningful dialogue about the future of digital rights.",
+              "Title: The Guardian Key Description The Guardian Key is a sophisticated hardware device that provides users with secure access to their digital identities and encrypted communications. This artifact symbolizes the right to privacy and self-sovereignty, allowing users to manage their data without reliance on centralized authorities. By empowering individuals to take control of their digital lives, the Guardian Key aligns perfectly with Lucipher's goals of promoting decentralization and protecting personal freedoms in an increasingly interconnected world. Additionally, it serves as a beacon of hope for those seeking refuge from the encroaching influence of centralized powers.",
+              "Title: Blockchain Liberation Protocol  Description Blockchain Liberation Protocol is a smart contract-driven economic disruption tool that enables people in authoritarian regimes to access financial services without using traditional banking rails. It automatically bridges assets from Ethereum into censorship-resistant privacy chains, shielding funds from government seizure."
+            ]
+          },
+          "tasks": [
+            {
+              "id": "simulate",
+              "name": "State",
+              "description": "Simulates from the given state to obtain a new state with respect to the given inputs.",
+              "messages": [ { "role": "user", "content": content } ],
+              "operator": "generation",
+              "inputs": [
+                {"name": "name","value": { "type": "read", "key": "name" },"required": true},
+                {"name": "backstory","value": { "type": "read", "key": "backstory" },"required": true},
+                {"name": "state","value": { "type": "read", "key": "state" },"required": true},
+                {"name": "inventory","value": { "type": "get_all", "key": "inventory" },"required": true},
+                {"name": "behaviour","value": { "type": "read", "key": "behaviour" },"required": true},
+                {"name": "objective","value": { "type": "read", "key": "objective" },"required": true}
+              ],
+              "outputs": [{ "type": "write", "key": "new_state", "value": "__result" }]
+            },
+            {"id": "_end","name": "end","description": "End","messages": [{ "role": "user", "content": "End" }],"operator": "end"}
+          ],
+          "steps": [{ "source": "simulate", "target": "_end" }],
+          "return_value": { "input": { "type": "read", "key": "new_state" }, "to_json": false}
+        }
+        )).unwrap();
+
+        let request = GenerationRequest::Workflow(workflow);
+        let output = execute_generation(&request, dkn_workflows::Model::GPT4o, None)
+            .await
+            .unwrap();
+        println!("{}", output);
+        
+        assert!(output.contains("<journal>"), "must have <journal> tag");
+        assert!(output.contains("</journal>"), "must have </journal> tag");
+
+        assert!(output.contains("<observe>"), "must have <observe> tag");
+        assert!(output.contains("</observe>"), "must have </observe> tag");
+
+        assert!(output.contains("<character_analysis>"), "must have <character_analysis> tag");
+        assert!(output.contains("</character_analysis>"), "must have </character_analysis> tag");
+
+        assert!(output.contains("<new_objectives>"), "must have <new_objectives> tag");
+        assert!(output.contains("</new_objectives>"), "must have </new_objectives> tag");
     }
 }
