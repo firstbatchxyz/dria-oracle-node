@@ -197,11 +197,13 @@ impl crate::DriaOracle {
         T: alloy::transports::Transport + Clone,
         N: alloy::network::Network,
     {
-        log::info!("Waiting for tx: {:?}", tx.tx_hash());
+        let tx_hash = tx.tx_hash().clone();
+        log::info!("Waiting for tx: {:?}", tx_hash);
         let receipt = tx
             .with_timeout(self.config.tx_timeout)
             .get_receipt()
-            .await?;
+            .await
+            .wrap_err(format!("tx {} failed", tx_hash))?;
         Ok(receipt)
     }
 

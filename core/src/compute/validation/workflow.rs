@@ -11,7 +11,7 @@ pub fn make_validation_workflow(
     // to get the correct order in results
     generations.reverse();
 
-    let max_time_sec = (generations.len() as u64) * 5 + 10; // we need at most few seconds per generation, plus some leeway here
+    let max_time_sec = (generations.len() as u64) * 8 + 10; // we need at most few seconds per generation, plus some leeway here
 
     let workflow = json!({
         "config": {
