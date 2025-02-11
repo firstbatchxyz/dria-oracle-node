@@ -5,7 +5,7 @@ default-members = ["core"]
 
 [workspace.package]
 edition = "2021"
-version = "0.2.36"
+version = "0.2.37"
 license = "Apache-2.0"
 readme = "README.md"
 authors = ["erhant"]

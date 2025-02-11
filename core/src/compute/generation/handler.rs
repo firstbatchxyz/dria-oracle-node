@@ -39,7 +39,20 @@ pub async fn handle_generation(
     log::debug!("Choosing model to use");
     let models_string = bytes_to_string(&request.models)?;
     let models_vec = models_string.split(',').map(|s| s.to_string()).collect();
-    let (_, model) = node.workflows.get_any_matching_model(models_vec)?;
+    let model = match node.workflows.get_any_matching_model(models_vec) {
+        Ok((_, model)) => model,
+        Err(e) => {
+            log::error!(
+                "No matching model found: {}, falling back to random model.",
+                e
+            );
+
+            node.workflows
+                .get_matching_model("*".to_string())
+                .expect("should return at least one model")
+                .1
+        }
+    };
     log::debug!("Using model: {} from {}", model, models_string);
 
     // parse protocol string early, in case it cannot be parsed

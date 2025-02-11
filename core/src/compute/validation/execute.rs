@@ -1,6 +1,8 @@
 use alloy::primitives::U256;
-use dkn_workflows::{Executor, Model, ProgramMemory};
+use dkn_workflows::Model;
 use eyre::{Context, Result};
+
+use crate::compute::execute::execute_workflow_with_timedout_retries;
 
 use super::workflow::*;
 
@@ -43,14 +45,7 @@ pub async fn execute_validations(
     let (workflow, duration) = make_validation_workflow(instruction, generations)?;
 
     log::debug!("Executing validation request with: {}", model);
-    let mut memory = ProgramMemory::new();
-    let executor = Executor::new(model);
-    let result_str = tokio::select! {
-        result = executor.execute(None, &workflow, &mut memory) => result?,
-        _ = tokio::time::sleep(duration) => {
-            return Err(eyre::eyre!("Validation workflow timed out"));
-        }
-    };
+    let result_str = execute_workflow_with_timedout_retries(&workflow, model, duration).await?;
 
     // first parse as vec of string
     // then parse each string as a ValidationResult
@@ -72,6 +67,11 @@ mod tests {
     #[ignore = "requires OpenAI API key"]
     async fn test_validation_multiple() {
         dotenvy::dotenv().unwrap();
+        let _ = env_logger::builder()
+            .filter_level(log::LevelFilter::Off)
+            .filter_module("dria_oracle", log::LevelFilter::Debug)
+            .is_test(true)
+            .try_init();
 
         let instruction = "What is 2 + 2".to_string();
         let generations: Vec<String> = [
@@ -121,6 +121,11 @@ mod tests {
     #[ignore = "requires OpenAI API key"]
     async fn test_validation_single() {
         dotenvy::dotenv().unwrap();
+        let _ = env_logger::builder()
+            .filter_level(log::LevelFilter::Off)
+            .filter_module("dria_oracle", log::LevelFilter::Debug)
+            .is_test(true)
+            .try_init();
 
         let instruction = "Can humans eat mango fruit?".to_string();
         let generations: Vec<String> = ["Yes they can."].iter().map(|s| s.to_string()).collect();
