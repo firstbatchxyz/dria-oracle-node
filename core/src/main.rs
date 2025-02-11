@@ -28,8 +28,8 @@ async fn main() -> eyre::Result<()> {
 
     // log about env usage after env logger init is executed
     match dotenv_result {
-        Ok(_) => log::info!("Loaded .env file at: {}", cli.env.display()),
-        Err(e) => log::warn!("Could not load .env file: {}", e),
+        Ok(_) => eprintln!("Loaded .env file at: {}", cli.env.display()),
+        Err(e) => eprintln!("Could not load .env file: {}", e),
     }
 
     // read required env variables

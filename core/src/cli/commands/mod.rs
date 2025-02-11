@@ -56,7 +56,7 @@ pub enum Commands {
         )]
         task_id: Option<U256>,
     },
-    /// View tasks. fsdkhfk fsdkjfdks
+    /// View tasks.
     View {
         #[arg(long, help = "Starting block number, defaults to 'earliest'.", value_parser = parse_block_number_or_tag)]
         from: Option<BlockNumberOrTag>,
