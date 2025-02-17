@@ -20,7 +20,7 @@ pub async fn execute_workflow_with_timedout_retries(
         let mut memory = ProgramMemory::new();
         tokio::select! {
             result = executor.execute(None, &workflow, &mut memory) => {
-              return result.wrap_err("could not execute worfklow");
+              return result.wrap_err("could not execute workflow");
             },
             // normally the workflow has a timeout logic as well, but it doesnt work that well, and may get stuck
             _ = tokio::time::sleep(duration) => {
