@@ -25,7 +25,8 @@ impl DriaOracle {
             Ok(None) => {
                 log::info!("Task {} ignored.", task_id)
             }
-            Err(e) => log::error!("Could not process task {}: {:?}", task_id, e),
+            // using `{:#}` here to get a single-line error message
+            Err(e) => log::error!("Could not process task {}: {:#}", task_id, e),
         }
 
         Ok(())

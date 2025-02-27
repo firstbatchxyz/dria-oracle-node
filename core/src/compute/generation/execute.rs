@@ -29,7 +29,7 @@ pub async fn execute_generation(
         // as we expect their memory to be pre-filled
         GenerationRequest::Workflow(workflow) => {
             let duration = Duration::from_secs(workflow.get_config().max_time);
-            execute_workflow_with_timedout_retries(&workflow, model, duration).await
+            execute_workflow_with_timedout_retries(workflow, model, duration).await
         }
 
         // string requests are used with the generation workflow with a given prompt
@@ -85,7 +85,7 @@ pub async fn execute_generation(
 
             // prepare the workflow with chat history
             let (workflow, duration) =
-                make_chat_workflow(history.clone(), chat_request.content.clone())?;
+                make_chat_workflow(history.clone(), chat_request.content.clone(), None, None)?;
             let output = execute_workflow_with_timedout_retries(&workflow, model, duration).await?;
 
             // append user input to chat history
@@ -102,7 +102,7 @@ mod tests {
     use super::*;
     use crate::compute::generation::request::{ChatHistoryRequest, GenerationRequest};
     #[tokio::test]
-    #[ignore = "run this manually"]
+    #[ignore = "requires Ollama"]
     async fn test_ollama_generation() {
         dotenvy::dotenv().unwrap();
         let request = GenerationRequest::String("What is the result of 2 + 2?".to_string());
@@ -115,7 +115,7 @@ mod tests {
     }
 
     #[tokio::test]
-    #[ignore = "run this manually"]
+    #[ignore = "requires OpenAI API key"]
     async fn test_openai_generation() {
         dotenvy::dotenv().unwrap();
         let request = GenerationRequest::String("What is the result of 2 + 2?".to_string());
@@ -128,7 +128,7 @@ mod tests {
     }
 
     #[tokio::test]
-    #[ignore = "run this manually"]
+    #[ignore = "requires OpenAI API key"]
     async fn test_openai_chat() {
         dotenvy::dotenv().unwrap();
         let request = ChatHistoryRequest {
@@ -148,7 +148,7 @@ mod tests {
     }
 
     #[tokio::test]
-    #[ignore = "run this manually"]
+    #[ignore = "requires OpenAI API key"]
     async fn test_workflow_on_arweave() {
         // cargo test --package dria-oracle --lib --all-features -- compute::generation::execute::tests::test_raw_workflow --exact --show-output --ignored
         dotenvy::dotenv().unwrap();
@@ -162,5 +162,22 @@ mod tests {
             .unwrap();
 
         println!("{}", output);
+    }
+
+    #[tokio::test]
+    #[ignore = "requires OpenRouter API key"]
+    async fn test_workflow_fails_with_short_time() {
+        dotenvy::dotenv().unwrap();
+        let _ = env_logger::builder()
+            .filter_level(log::LevelFilter::Off)
+            .filter_module("dria_oracle", log::LevelFilter::Info)
+            .is_test(true)
+            .try_init();
+
+        let (workflow, _) =
+            make_chat_workflow(Vec::new(), "What is 2+2".into(), Some(1), None).unwrap();
+        let request = GenerationRequest::Workflow(workflow);
+        let result = execute_generation(&request, Model::ORDeepSeek2_5, None).await;
+        assert!(result.is_err());
     }
 }

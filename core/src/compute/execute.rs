@@ -1,6 +1,8 @@
 use core::time::Duration;
-use dkn_workflows::{Executor, Model, ProgramMemory, Workflow};
+use dkn_workflows::{ExecutionError, Executor, Model, ProgramMemory, Workflow};
 use eyre::Context;
+
+const NUM_RETRIES: usize = 4;
 
 /// A wrapper for executing a workflow with retries.
 ///
@@ -12,23 +14,33 @@ pub async fn execute_workflow_with_timedout_retries(
     model: Model,
     duration: Duration,
 ) -> eyre::Result<String> {
-    const NUM_RETRIES: usize = 3;
+    let executor = Executor::new(model);
 
     let mut retries = 0;
-    let executor = Executor::new(model);
     while retries < NUM_RETRIES {
         let mut memory = ProgramMemory::new();
         tokio::select! {
-            result = executor.execute(None, &workflow, &mut memory) => {
-              return result.wrap_err("could not execute workflow");
+            result = executor.execute(None, workflow, &mut memory) => {
+              if let Err(ExecutionError::WorkflowFailed(reason)) = result {
+                // handle Workflow failed errors with retries
+                log::warn!("Execution gave WorkflowFailed error with: {}", reason);
+                if retries < NUM_RETRIES {
+                  retries += 1;
+                  log::warn!("Retrying {}/{}", retries, NUM_RETRIES);
+                  continue;
+                }
+              } else {
+                return result.wrap_err("could not execute workflow");
+              }
             },
             // normally the workflow has a timeout logic as well, but it doesnt work that well, and may get stuck
             _ = tokio::time::sleep(duration) => {
                 // if we have retries left, log a warning and continue
                 // note that other errors will be returned as is
+                log::warn!("Execution timed out");
                 if retries < NUM_RETRIES {
                   retries += 1;
-                  log::warn!("Execution timed out, retrying {}/{}", retries + 1, NUM_RETRIES);
+                  log::warn!("Retrying {}/{}", retries, NUM_RETRIES);
                   continue;
                 }
             }
@@ -36,8 +48,8 @@ pub async fn execute_workflow_with_timedout_retries(
     }
 
     // all retries failed
-    return Err(eyre::eyre!(
-        "Execution timed out after {} retries",
+    Err(eyre::eyre!(
+        "Execution failed after {} retries",
         NUM_RETRIES
-    ));
+    ))
 }

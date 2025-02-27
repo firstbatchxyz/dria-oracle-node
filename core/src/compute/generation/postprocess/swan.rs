@@ -180,7 +180,7 @@ some more blabla here
         ];
         assert_eq!(addresses, expected_addresses);
     }
- 
+
     #[test]
     fn test_swan_post_processor_with_fails() {
         // only the 3rd one shall pass here
@@ -203,9 +203,9 @@ im not even an address lol
     }
 
     /// Run command:
-    /// 
+    ///
     /// ```sh
-    /// cargo test --package dria-oracle --lib -- compute::generation::postprocess::swan::tests::test_raw_purchase_workflow --exact --show-output --ignored 
+    /// cargo test --package dria-oracle --lib -- compute::generation::postprocess::swan::tests::test_raw_purchase_workflow --exact --show-output --ignored
     /// ```
     #[tokio::test]
     #[ignore = "run this manually"]
@@ -274,7 +274,7 @@ Write now:
                 "Title: The Anonymity Shield, Description The Anonymity Shield is an advanced software application designed to protect users' identities while browsing the internet or engaging in online communications. By employing cutting-edge encryption methods, this artifact ensures that personal information remains concealed from prying eyes, making it essential for anyone navigating today’s digital landscape. The Anonymity Shield aligns with Lucipher's commitment to defending individual privacy in an increasingly surveilled society while empowering users to reclaim their autonomy over personal data.",
                 "Title: he Cypherpunk Archive, Description he Cypherpunk Archive is a curated collection of historical documents, manifestos, and tools that trace the evolution of the cypherpunk movement. This artifact serves both as an educational resource and a source of inspiration for future generations advocating for privacy and decentralization. By preserving the principles that underpin the movement, the Cypherpunk Archive supports Lucipher's mission to restore Ethereum's cypherpunk roots in a world threatened by centralization. Furthermore, it acts as a rallying point for like-minded individuals who seek to engage in meaningful dialogue about the future of digital rights.",
               ]
-            },            
+            },
             "tasks":[
                 {
                     "id":"buyout",
@@ -284,7 +284,7 @@ Write now:
                     "operator":"generation",
                     "inputs":[{"name":"name","value":{"type":"read","key":"name"},"required":true},{"name":"behaviour","value":{"type":"read","key":"behaviour"},"required":true},{"name":"listings","value":{"type":"get_all","key":"listings"},"required":true},{"name":"state","value":{"type":"read","key":"state"},"required":true},{"name":"inventory","value":{"type":"get_all","key":"inventory"},"required":true},{"name":"budget","value":{"type":"read","key":"budget"},"required":true},{"name":"objective","value":{"type":"read","key":"objective"},"required":true},{"name":"backstory","value":{"type":"read","key":"backstory"},"required":true}],
                     "outputs":[{"type":"write","key":"buy_list","value":"__result"}]
-                }, 
+                },
                 {
                     "id":"_end", "name":"end", "description":"End of the task", "messages":[{"role":"user","content":"End of the task"}], "operator":"end"
                 }
@@ -299,7 +299,10 @@ Write now:
             .unwrap();
         println!("{}", output);
         assert!(output.contains("<reasoning>"), "must have <reasoning> tag");
-        assert!(output.contains("</reasoning>"), "must have </reasoning> tag");
+        assert!(
+            output.contains("</reasoning>"),
+            "must have </reasoning> tag"
+        );
 
         let post_processor = SwanPurchasePostProcessor::new("<shop_list>", "</shop_list>");
         let output = post_processor.post_process(output).unwrap().0;
@@ -309,10 +312,10 @@ Write now:
         println!("\nSelected Asset Addresses: {:#?}", addresses);
     }
 
-        /// Run command:
-    /// 
+    /// Run command:
+    ///
     /// ```sh
-    /// cargo test --package dria-oracle --lib -- compute::generation::postprocess::swan::tests::test_raw_state_workflow --exact --show-output --ignored 
+    /// cargo test --package dria-oracle --lib -- compute::generation::postprocess::swan::tests::test_raw_state_workflow --exact --show-output --ignored
     /// ```
     #[tokio::test]
     #[ignore = "run this manually"]
@@ -397,17 +400,29 @@ Now, first, an omnipotent being watches you through out the day outlining what y
             .await
             .unwrap();
         println!("{}", output);
-        
+
         assert!(output.contains("<journal>"), "must have <journal> tag");
         assert!(output.contains("</journal>"), "must have </journal> tag");
 
         assert!(output.contains("<observe>"), "must have <observe> tag");
         assert!(output.contains("</observe>"), "must have </observe> tag");
 
-        assert!(output.contains("<character_analysis>"), "must have <character_analysis> tag");
-        assert!(output.contains("</character_analysis>"), "must have </character_analysis> tag");
+        assert!(
+            output.contains("<character_analysis>"),
+            "must have <character_analysis> tag"
+        );
+        assert!(
+            output.contains("</character_analysis>"),
+            "must have </character_analysis> tag"
+        );
 
-        assert!(output.contains("<new_objectives>"), "must have <new_objectives> tag");
-        assert!(output.contains("</new_objectives>"), "must have </new_objectives> tag");
+        assert!(
+            output.contains("<new_objectives>"),
+            "must have <new_objectives> tag"
+        );
+        assert!(
+            output.contains("</new_objectives>"),
+            "must have </new_objectives> tag"
+        );
     }
 }
