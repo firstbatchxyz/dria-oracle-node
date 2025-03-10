@@ -11,7 +11,7 @@ impl DriaOracle {
         let request = self.coordinator.requests(task_id).call().await?;
 
         log::info!(
-            "Request Information:\nRequester: {}\nStatus:    {}\nInput:     {}\nModels:    {}\nProtocol:   {}",
+            "Request Information:\nRequester: {}\nStatus:    {}\nInput:     {}\nModels:    {}\nProtocol:  {}",
             request.requester,
             TaskStatus::try_from(request.status)?,
             bytes_to_string(&request.input)?,
